@@ -11,7 +11,6 @@ A comprehensive genetics simulation with:
 
 import random
 from typing import Dict, List, Tuple, Optional, Set, NamedTuple
-from dataclasses import dataclass, field
 from enum import Enum
 from collections import Counter
 import math
@@ -19,6 +18,7 @@ import csv
 import os
 import glob
 import sys
+import json
 
 # Set deterministic seed for reproducibility
 random.seed(42)
@@ -54,6 +54,51 @@ class RealLocus(NamedTuple):
 # Global variable to store dynamically detected loci
 # Will be populated by detect_variable_loci() when dataset is loaded
 REAL_LOCI: List[RealLocus] = []
+
+# Global variable to store gene models loaded from JSON
+GENE_MODELS: Dict = {}
+
+
+def load_gene_models(filepath: str = "gene_models.json") -> Dict:
+    """
+    Load gene models from JSON configuration file.
+
+    Args:
+        filepath: Path to gene_models.json file
+
+    Returns:
+        Dictionary of gene models
+    """
+    try:
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+            return data.get("genes", {})
+    except FileNotFoundError:
+        print(f"Warning: {filepath} not found. Using hardcoded defaults.")
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"Warning: Error parsing {filepath}: {e}. Using hardcoded defaults.")
+        return {}
+
+
+def get_gene_model(gene_name: str) -> Dict:
+    """
+    Get genetic model for a specific gene.
+
+    Args:
+        gene_name: Name of the gene (e.g., "TYRP1", "MC1R")
+
+    Returns:
+        Gene model dictionary, or DEFAULT model if gene not found
+    """
+    global GENE_MODELS
+
+    # Load models if not already loaded
+    if not GENE_MODELS:
+        GENE_MODELS = load_gene_models()
+
+    # Return gene model or default
+    return GENE_MODELS.get(gene_name, GENE_MODELS.get("DEFAULT", {}))
 
 
 class Dataset:
@@ -139,27 +184,26 @@ def detect_variable_loci(dataset: Dataset, strainA: str, strainB: str, max_loci:
         # Only include loci with actual variation (different genotypes)
         if gt_a != gt_b:
             # Infer gene name from file path if available
-            gene_name = "unknown"
+            gene_name = "UNKNOWN"
             if dataset.genopath:
-                # Extract gene name from filename (e.g., "cleaned_snp_MC1R_..." -> "MC1R")
+                # Extract gene name from filename (more robust pattern)
+                # Matches: snp_MC1R_, snp-MC1R, snp_TYRP1.csv, etc.
                 import re
-                match = re.search(r'snp_([A-Z0-9]+)_', os.path.basename(dataset.genopath))
+                fname = os.path.basename(dataset.genopath)
+                match = re.search(r'snp[_-]([A-Za-z0-9]+)', fname)
                 if match:
-                    gene_name = match.group(1)
+                    gene_name = match.group(1).upper()
 
-            # Determine genetic model based on gene name
-            if gene_name == "TYRP1":
-                model = "tyrp1_brown"  # TYRP1: 0/1=black, 2=brown
-            elif gene_name == "MC1R":
-                model = "mc1r_extension"  # MC1R: 0/1=black, 2=yellow
-            else:
-                model = "tyrp1_brown"  # Default model for unknown genes
+            # Get gene model from configuration (flexible, not hardcoded!)
+            gene_info = get_gene_model(gene_name)
+            trait = gene_info.get("trait", "unknown")
+            model_name = gene_name.lower()  # Use gene name as model identifier
 
             locus = RealLocus(
-                trait="coat_color",
+                trait=trait,
                 chr=chr_name,
                 pos=pos,
-                model=model
+                model=model_name
             )
             variable_loci.append(locus)
 
@@ -173,11 +217,12 @@ def detect_variable_loci(dataset: Dataset, strainA: str, strainB: str, max_loci:
 def express_from_real_geno(trait: str, gt012: Optional[int], model: str) -> Optional[str]:
     """
     Interpret real genotype (0/1/2) to phenotype based on model.
+    Uses gene_models.json configuration for flexible, extensible phenotype mapping.
 
     Args:
-        trait: Trait name (e.g., "coat_color")
+        trait: Trait name (e.g., "coat_color", "body_weight")
         gt012: Genotype as 0/1/2 (minor allele count)
-        model: Genetic model (e.g., "tyrp1_brown", "mc1r_extension")
+        model: Model name (typically gene name in lowercase, e.g., "tyrp1", "mc1r")
 
     Returns:
         Phenotype value or None if not interpretable
@@ -185,30 +230,23 @@ def express_from_real_geno(trait: str, gt012: Optional[int], model: str) -> Opti
     if gt012 is None:
         return None
 
-    if trait == "coat_color" and model == "tyrp1_brown":
-        # TYRP1: Tyrosinase-related protein 1
-        # Genotype 0 (ref/ref) = BLACK (wild-type, functional TYRP1)
-        # Genotype 1 (ref/alt) = BLACK (one functional copy is enough)
-        # Genotype 2 (alt/alt) = BROWN (loss of function, brown eumelanin)
-        # This matches C57BL/6J (genotype 0) = black, DBA/2J (genotype 2) = dilute brown
-        if gt012 == 2:
-            return "brown"
-        else:
-            return "black"
+    # Get gene model from configuration
+    gene_name = model.upper()
+    gene_info = get_gene_model(gene_name)
 
-    if trait == "coat_color" and model == "mc1r_extension":
-        # MC1R: Melanocortin 1 receptor (Extension locus)
-        # Controls whether eumelanin (black/brown) is produced
-        # Genotype 0 (ref/ref) = BLACK (functional MC1R, produces eumelanin)
-        # Genotype 1 (ref/alt) = BLACK (one functional copy)
-        # Genotype 2 (alt/alt) = YELLOW/RED (loss of function, only phaeomelanin)
-        # C57BL/6J and BALB/cJ both have genotype 0 = black
-        if gt012 == 2:
-            return "yellow"
-        else:
-            return "black"
+    if not gene_info:
+        # Fallback: return generic phenotype
+        return f"phenotype_{gt012}"
 
-    return None
+    # Get genotype-to-phenotype mapping
+    genotypes = gene_info.get("model", {}).get("genotypes", {})
+    geno_str = str(gt012)
+
+    if geno_str in genotypes:
+        return genotypes[geno_str].get("phenotype", f"phenotype_{gt012}")
+
+    # Fallback
+    return f"phenotype_{gt012}"
 
 
 # ============================================================================
@@ -399,7 +437,7 @@ class Genome:
 
     def copy(self) -> 'Genome':
         """Create a deep copy of this genome."""
-        return Genome(
+        g = Genome(
             coat_color=self.coat_color,
             size=self.size,
             ear_shape=self.ear_shape,
@@ -407,6 +445,9 @@ class Genome:
             haplotype_chr1=(self.haplotype_chr1[0].copy(), self.haplotype_chr1[1].copy()),
             haplotype_chr2=(self.haplotype_chr2[0].copy(), self.haplotype_chr2[1].copy())
         )
+        # Preserve owner reference for REAL mode phenotype override
+        g.owner = getattr(self, "owner", None)
+        return g
 
 
 # Global counter for unique mouse IDs
@@ -1223,6 +1264,9 @@ class Population:
 
         Returns:
             n×n GRM matrix as list of lists
+
+        TODO: In REAL mode, compute G from dataset.geno (real MPD loci)
+              instead of the 200 simulated SNPs for fully real analysis.
         """
         if not self.mice:
             return [[]]
@@ -1870,13 +1914,14 @@ def run_real_mode_demo(dataset: Dataset, strainA: str, strainB: str):
     print("=" * 80)
     print()
 
-    # Extract gene name from filename
-    gene_name = "Unknown Gene"
+    # Extract gene name from filename (more robust pattern)
+    gene_name = "UNKNOWN"
     if dataset.genopath:
         import re
-        match = re.search(r'snp_([A-Z0-9]+)_', os.path.basename(dataset.genopath))
+        fname = os.path.basename(dataset.genopath)
+        match = re.search(r'snp[_-]([A-Za-z0-9]+)', fname)
         if match:
-            gene_name = match.group(1)
+            gene_name = match.group(1).upper()
 
     print(f"Dataset: {os.path.basename(dataset.genopath) if dataset.genopath else 'Unknown'}")
     print(f"Gene: {gene_name}")
@@ -1903,20 +1948,22 @@ def run_real_mode_demo(dataset: Dataset, strainA: str, strainB: str):
             chr_name, pos = first_snp
             gt_shared = geno_a[first_snp]
 
-            # Determine model based on gene
-            if gene_name == "MC1R":
-                model = "mc1r_extension"
-            else:
-                model = "tyrp1_brown"
+            # Get gene model (flexible, not hardcoded!)
+            gene_info = get_gene_model(gene_name)
+            trait = gene_info.get("trait", "unknown")
+            model = gene_name.lower()
 
             # Get phenotype
-            pheno_shared = express_from_real_geno("coat_color", gt_shared, model)
+            pheno_shared = express_from_real_geno(trait, gt_shared, model)
             if pheno_shared is None:
                 pheno_shared = "unknown"
 
             print("SHARED GENOTYPE:")
             print(f"  Both {strainA} and {strainB} have genotype {gt_shared} at {gene_name}")
-            print(f"  Both strains have {pheno_shared.upper()} coat color")
+            if trait == "coat_color":
+                print(f"  Both strains have {pheno_shared.upper()} coat color")
+            else:
+                print(f"  Both strains have {pheno_shared.upper()} {trait}")
             print()
 
         print("INTERPRETATION:")
@@ -2069,14 +2116,22 @@ def run_real_mode_demo(dataset: Dataset, strainA: str, strainB: str):
         print()
         print(f"4. F1 offspring gets genotype {f1_geno_num} ({f1_geno_desc})")
         print()
-        print(f"5. Using '{first_locus.model}' genetic model:")
-        if first_locus.model == "tyrp1_brown":
-            print(f"   => Genotype 0 (ref/ref) = BLACK (functional TYRP1 enzyme)")
-            print(f"   => Genotype 1 (ref/alt) = BLACK (one functional copy)")
-            print(f"   => Genotype 2 (alt/alt) = BROWN (loss of function mutation)")
-            print()
-            print(f"   TYRP1 gene produces an enzyme for black pigment (eumelanin).")
-            print(f"   Without it (genotype 2), mice produce brown pigment instead.")
+        print(f"5. Using '{gene_name}' genetic model:")
+
+        # Get gene model info (flexible, not hardcoded!)
+        gene_info = get_gene_model(gene_name)
+        genotypes = gene_info.get("model", {}).get("genotypes", {})
+
+        for geno in ["0", "1", "2"]:
+            if geno in genotypes:
+                pheno = genotypes[geno].get("phenotype", "unknown")
+                desc = genotypes[geno].get("description", "")
+                print(f"   => Genotype {geno} = {pheno.upper()} ({desc})")
+
+        print()
+        gene_function = gene_info.get("function", "")
+        if gene_function:
+            print(f"   {gene_name} function: {gene_function}")
         print()
         print(f"6. Therefore: F1 offspring will be {f1_phenotype.upper()}")
         print()
@@ -2085,7 +2140,8 @@ def run_real_mode_demo(dataset: Dataset, strainA: str, strainB: str):
         print("BIOLOGICAL INSIGHT:")
         print()
         print(f"[*] This uses REAL genomic data from Mouse Phenome Database")
-        print(f"[*] Gene analyzed: {gene_name}")
+        print(f"[*] Gene analyzed: {gene_name} ({gene_info.get('name', 'Unknown gene')})")
+        print(f"[*] Trait affected: {gene_info.get('trait', 'unknown')}")
         print(f"[*] Found {len(REAL_LOCI)} variable SNP(s) between these strains")
         print(f"[*] Prediction follows Mendelian inheritance laws")
         print()

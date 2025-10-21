@@ -1,0 +1,180 @@
+{
+  "genes": {
+    "DEFAULT": {
+      "name": "Unknown gene",
+      "trait": "coat_color",
+      "function": "Genetic function not specified",
+      "model": {
+        "type": "additive",
+        "genotypes": {
+          "0": {
+            "phenotype": "type0",
+            "description": "Homozygous reference genotype"
+          },
+          "1": {
+            "phenotype": "type1",
+            "description": "Heterozygous genotype"
+          },
+          "2": {
+            "phenotype": "type2",
+            "description": "Homozygous alternate genotype"
+          }
+        }
+      }
+    },
+    "MC1R": {
+      "name": "Melanocortin 1 receptor",
+      "trait": "coat_color",
+      "function": "Switches between eumelanin (black/brown) and pheomelanin (yellow/red).",
+      "model": {
+        "type": "recessive",
+        "genotypes": {
+          "0": {
+            "phenotype": "black",
+            "description": "ref/ref (functional)"
+          },
+          "1": {
+            "phenotype": "black",
+            "description": "ref/alt (haplo-sufficient)"
+          },
+          "2": {
+            "phenotype": "yellow",
+            "description": "alt/alt (loss-of-function)"
+          }
+        }
+      }
+    },
+    "TYRP1": {
+      "name": "Tyrosinase related protein 1",
+      "trait": "coat_color",
+      "function": "Eumelanin maturation; LoF causes brown dilution.",
+      "model": {
+        "type": "recessive",
+        "genotypes": {
+          "0": {
+            "phenotype": "black",
+            "description": "ref/ref"
+          },
+          "1": {
+            "phenotype": "black",
+            "description": "ref/alt (dominant black)"
+          },
+          "2": {
+            "phenotype": "brown",
+            "description": "alt/alt (recessive brown)"
+          }
+        }
+      }
+    },
+    "TYR": {
+      "name": "Tyrosinase",
+      "trait": "coat_color",
+      "function": "Essential enzyme for melanin production (all pigment)",
+      "model": {
+        "type": "recessive",
+        "genotypes": {
+          "0": {
+            "phenotype": "black",
+            "description": "Functional tyrosinase, normal pigment production"
+          },
+          "1": {
+            "phenotype": "black",
+            "description": "One functional copy is sufficient"
+          },
+          "2": {
+            "phenotype": "albino",
+            "description": "Complete loss of function, no pigment (albino/white)"
+          }
+        }
+      }
+    },
+    "ASIP": {
+      "name": "Agouti signaling protein",
+      "trait": "coat_color",
+      "function": "Controls banding pattern on individual hairs (agouti pattern)",
+      "model": {
+        "type": "dominant",
+        "genotypes": {
+          "0": {
+            "phenotype": "black",
+            "description": "No agouti signaling, solid black coat"
+          },
+          "1": {
+            "phenotype": "agouti",
+            "description": "Agouti pattern (banded hairs, brown/tan appearance)"
+          },
+          "2": {
+            "phenotype": "agouti",
+            "description": "Strong agouti pattern (yellow/tan coat)"
+          }
+        }
+      }
+    },
+    "KIT": {
+      "name": "KIT proto-oncogene",
+      "trait": "coat_color",
+      "function": "Controls melanocyte migration and survival (white spotting)",
+      "model": {
+        "type": "dominant",
+        "genotypes": {
+          "0": {
+            "phenotype": "solid",
+            "description": "Normal melanocyte distribution, solid coat color"
+          },
+          "1": {
+            "phenotype": "spotted",
+            "description": "Partial white spotting (piebald pattern)"
+          },
+          "2": {
+            "phenotype": "white",
+            "description": "Extensive white spotting or all-white coat"
+          }
+        }
+      }
+    },
+    "MTTP": {
+      "name": "Microsomal triglyceride transfer protein",
+      "trait": "body_weight",
+      "function": "Lipid metabolism and body weight regulation",
+      "model": {
+        "type": "additive",
+        "genotypes": {
+          "0": {
+            "phenotype": "normal_weight",
+            "description": "Normal lipid metabolism"
+          },
+          "1": {
+            "phenotype": "intermediate_weight",
+            "description": "Intermediate effect on body weight"
+          },
+          "2": {
+            "phenotype": "high_weight",
+            "description": "Increased body weight, altered lipid metabolism"
+          }
+        }
+      }
+    },
+    "LEP": {
+      "name": "Leptin",
+      "trait": "body_weight",
+      "function": "Appetite regulation and energy balance",
+      "model": {
+        "type": "recessive",
+        "genotypes": {
+          "0": {
+            "phenotype": "normal_weight",
+            "description": "Functional leptin, normal appetite regulation"
+          },
+          "1": {
+            "phenotype": "normal_weight",
+            "description": "One functional copy is sufficient"
+          },
+          "2": {
+            "phenotype": "obese",
+            "description": "Loss of function, severe obesity (ob/ob mice)"
+          }
+        }
+      }
+    }
+  }
+}
