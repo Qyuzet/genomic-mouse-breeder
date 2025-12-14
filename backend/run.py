@@ -20,9 +20,9 @@ if __name__ == "__main__":
     print("=" * 80)
     print("MOUSE BREEDING SIMULATOR API")
     print("=" * 80)
-    print(f"Starting server on http://{host}:{port}")
-    print(f"API Documentation: http://{host}:{port}/docs")
-    print(f"Alternative Docs: http://{host}:{port}/redoc")
+    print(f"Starting server on http://localhost:{port}")
+    print(f"API Documentation: http://localhost:{port}/docs")
+    print(f"Alternative Docs: http://localhost:{port}/redoc")
     print("=" * 80)
 
     # Change to backend directory

@@ -17,6 +17,8 @@ spec = importlib.util.spec_from_file_location("mouse_breeder", mouse_breeder_pat
 mouse_breeder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mouse_breeder)
 
+import uuid
+
 # Import all needed components
 Mouse = mouse_breeder.Mouse
 Genome = mouse_breeder.Genome
@@ -49,8 +51,8 @@ class GeneticsService:
         """Create a new population."""
         goal = getattr(GoalPresets, goal_preset, GoalPresets.LARGE_FRIENDLY)
         pop = Population(size=size, goal=goal)
-        
-        pop_id = f"pop_{len(self.populations)}"
+        # Generate a collision-resistant population id
+        pop_id = f"pop_{uuid.uuid4().hex[:8]}"
         self.populations[pop_id] = pop
         
         # Store individual mice
@@ -104,8 +106,11 @@ class GeneticsService:
         # Create temporary population
         pop = Population(size=0, goal=GoalPresets.LARGE_FRIENDLY)
         pop.mice = mice
-        
-        f_pedigree_values = [pop.pedigree_inbreeding(m) for m in mice]
+        # Build registry mapping integer IDs -> Mouse objects for pedigree functions
+        registry = {m.id: m for m in mice}
+
+        # Compute pedigree-based inbreeding using function from mouse_breeder
+        f_pedigree_values = [mouse_breeder.pedigree_inbreeding(m, registry) for m in mice]
         
         # Compute GRM for genomic inbreeding
         grm = pop.compute_grm()

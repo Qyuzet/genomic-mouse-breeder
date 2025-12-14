@@ -48,7 +48,7 @@ class CrossPredictResponse(BaseModel):
     genotypes: Dict[str, Any]
     phenotypes: Dict[str, Any]
     punnett_square: str
-    expected_ratios: Dict[str, float]
+    expected_ratios: Dict[str, Any]
 
 
 # ============================================================================

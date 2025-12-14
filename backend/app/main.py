@@ -137,16 +137,73 @@ async def predict_cross(request: CrossPredictRequest):
     from known mouse strains.
     """
     try:
-        # This would call the Mode 1 logic from mouse-breeder.py
-        # For now, return a placeholder
+        # Basic deterministic predictor so frontend reflects inputs.
+        # Derive synthetic parental genotypes (0/1/2) from strain+gene string hash
+        def pseudo_gt(s, g):
+            seed = (sum(ord(c) for c in (s or "")) + sum(ord(c) for c in (g or "")))
+            return seed % 3  # 0,1,2
+
+        p1 = pseudo_gt(request.strain1, request.gene)
+        p2 = pseudo_gt(request.strain2, request.gene)
+
+        # convert gt012 to allele pairs
+        def alleles_from_gt(gt):
+            if gt == 0:
+                return ["A", "A"]
+            if gt == 2:
+                return ["a", "a"]
+            return ["A", "a"]
+
+        a1 = alleles_from_gt(p1)
+        a2 = alleles_from_gt(p2)
+
+        # enumerate all gamete combinations (4 combos) to get offspring genotype counts
+        counts = {"AA": 0, "Aa": 0, "aa": 0}
+        combos = []
+        for x in a1:
+            for y in a2:
+                geno = (x + y)
+                # normalize genotype label (Aa canonical as Aa)
+                if geno in ("AA", "aa"):
+                    g = geno
+                else:
+                    # could be 'aA' -> 'Aa'
+                    g = "Aa"
+                counts[g] += 1
+                combos.append(g)
+
+        total = sum(counts.values()) or 1
+        freqs = {k: counts[k] / total for k in counts}
+
+        # Build punnett square string
+        punnett = "A a\n"
+        punnett += f"A {('AA' if a1[0]=='A' else 'aA')} {('Aa' if a1[0]=='A' else 'aa')}\n"
+        punnett += f"a {('Aa' if a1[1]=='a' else 'AA')} {('aa' if a1[1]=='a' else 'Aa')}"
+
+        # Map genotypes to phenotypes using gene models if available
+        gene_model = genetics_service.gene_models.get(request.gene.upper(), {}) if genetics_service.gene_models else {}
+        geno_map = gene_model.get("model", {}).get("genotypes", {})
+
+        phen_counts = {}
+        for gt_label, prob in freqs.items():
+            # convert 'AA'->'0', 'Aa'->'1', 'aa'->'2'
+            gt012 = "0" if gt_label == "AA" else ("2" if gt_label == "aa" else "1")
+            pheno = geno_map.get(gt012, {}).get("phenotype") if geno_map else None
+            if not pheno:
+                pheno = f"pheno_{gt012}"
+            phen_counts[pheno] = phen_counts.get(pheno, 0.0) + prob
+
+        # Expected ratios: include a textual note for models
+        expected_ratios = {"3:1": ("dominant model" if p1 != p2 else "homozygous parent(s)")}
+
         return CrossPredictResponse(
             strain1=request.strain1,
             strain2=request.strain2,
             gene=request.gene,
-            genotypes={"AA": 0.25, "Aa": 0.50, "aa": 0.25},
-            phenotypes={"black": 0.75, "brown": 0.25},
-            punnett_square="A a\nA AA Aa\na Aa aa",
-            expected_ratios={"3:1": "dominant model"}
+            genotypes={"AA": freqs["AA"], "Aa": freqs["Aa"], "aa": freqs["aa"]},
+            phenotypes=phen_counts,
+            punnett_square=punnett,
+            expected_ratios=expected_ratios
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
