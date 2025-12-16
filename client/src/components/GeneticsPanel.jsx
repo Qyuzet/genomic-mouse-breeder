@@ -34,30 +34,61 @@ export default function GeneticsPanel({ population }) {
 
   return (
     <div className="panel">
-      <h4>Genetics</h4>
+      <h4>Genetic Analysis</h4>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={handleGRM} disabled={!population || loading}>
           Compute GRM
         </button>
         <button onClick={handleInbreeding} disabled={!population || loading}>
-          Genomic Inbreeding
+          Inbreeding
         </button>
       </div>
-      <div style={{ marginTop: 10 }}>
+      <div style={{ marginTop: 12 }}>
         {grm && !grm.error && (
           <div>
-            <strong>GRM:</strong>
-            <div style={{ overflowX: "auto", marginTop: 8 }}>
-              <table style={{ borderCollapse: "collapse", minWidth: 400 }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: 8,
+              }}
+            >
+              Genomic Relationship Matrix
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  borderCollapse: "collapse",
+                  width: "100%",
+                  fontSize: 12,
+                }}
+              >
                 <thead>
-                  <tr>
-                    <th style={{ border: "1px solid #eee", padding: 6 }}>ID</th>
+                  <tr style={{ background: "#f9fafb" }}>
+                    <th
+                      style={{
+                        border: "1px solid #e5e7eb",
+                        padding: 8,
+                        textAlign: "left",
+                        fontWeight: 600,
+                        color: "#374151",
+                      }}
+                    >
+                      ID
+                    </th>
                     {(grm.mouse_ids || []).map((id) => (
                       <th
                         key={id}
-                        style={{ border: "1px solid #eee", padding: 6 }}
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          padding: 8,
+                          textAlign: "center",
+                          fontWeight: 600,
+                          color: "#374151",
+                        }}
                       >
-                        {id}
+                        {String(id).slice(0, 6)}
                       </th>
                     ))}
                   </tr>
@@ -65,16 +96,25 @@ export default function GeneticsPanel({ population }) {
                 <tbody>
                   {(grm.grm || []).map((row, i) => (
                     <tr key={i}>
-                      <td style={{ border: "1px solid #eee", padding: 6 }}>
-                        {(grm.mouse_ids || [])[i]}
+                      <td
+                        style={{
+                          border: "1px solid #e5e7eb",
+                          padding: 8,
+                          fontWeight: 500,
+                          background: "#f9fafb",
+                          color: "#374151",
+                        }}
+                      >
+                        {String((grm.mouse_ids || [])[i]).slice(0, 6)}
                       </td>
                       {row.map((val, j) => (
                         <td
                           key={j}
                           style={{
-                            border: "1px solid #f1f1f1",
-                            padding: 6,
-                            textAlign: "right",
+                            border: "1px solid #e5e7eb",
+                            padding: 8,
+                            textAlign: "center",
+                            color: "#6b7280",
                           }}
                         >
                           {typeof val === "number"
@@ -91,16 +131,27 @@ export default function GeneticsPanel({ population }) {
         )}
 
         {grm && grm.error && (
-          <div style={{ color: "#900" }}>GRM error: {grm.error}</div>
+          <div className="error">GRM Error: {grm.error}</div>
         )}
 
-        {inb && (
-          <div style={{ marginTop: 8 }}>
-            <strong>Inbreeding:</strong>
-            <pre style={{ maxHeight: 200, overflow: "auto" }}>
-              {JSON.stringify(inb, null, 2)}
-            </pre>
+        {inb && !inb.error && (
+          <div style={{ marginTop: 12 }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: 8,
+              }}
+            >
+              Inbreeding Coefficients
+            </div>
+            <div className="mini-json">{JSON.stringify(inb, null, 2)}</div>
           </div>
+        )}
+
+        {inb && inb.error && (
+          <div className="error">Inbreeding Error: {inb.error}</div>
         )}
       </div>
     </div>

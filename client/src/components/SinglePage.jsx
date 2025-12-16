@@ -129,19 +129,19 @@ export default function SinglePage() {
   return (
     <div className="sp-root">
       <header className="sp-topbar">
-        <h2>Mouse Breeder — Single Page</h2>
+        <h2>Genomic Mouse Breeder</h2>
         <div className="mode-toggle">
           <button
             onClick={() => setMode("SIM")}
             className={mode === "SIM" ? "active" : ""}
           >
-            SIM
+            Simulation
           </button>
           <button
             onClick={() => setMode("REAL")}
             className={mode === "REAL" ? "active" : ""}
           >
-            REAL
+            Real Data
           </button>
         </div>
       </header>
@@ -150,37 +150,62 @@ export default function SinglePage() {
         <aside className="sp-left">
           {mode === "SIM" ? (
             <div className="panel">
-              <h3>SIM Controls</h3>
-              <label>Population name</label>
+              <h3>Simulation Controls</h3>
+              <label>Population Name</label>
               <input
                 value={popName}
                 onChange={(e) => setPopName(e.target.value)}
+                placeholder="Enter population name"
               />
-              <label>Size</label>
+              <label>Population Size</label>
               <input
                 type="number"
                 value={popSize}
                 onChange={(e) => setPopSize(e.target.value)}
+                min="10"
+                max="100"
               />
-              <button onClick={handleCreatePopulation} disabled={loading}>
+              <button
+                className="primary"
+                onClick={handleCreatePopulation}
+                disabled={loading}
+              >
                 Create Population
               </button>
               <button onClick={handleAdvance} disabled={!pop || loading}>
                 Advance Generation
               </button>
-              <div style={{ marginTop: 12 }}>
-                <label style={{ display: "block" }}>Live WebSocket</label>
-                <button onClick={() => setLive((v) => !v)}>
-                  {live ? "Disconnect Live" : "Connect Live"}
-                </button>
-                <div style={{ fontSize: 12, marginTop: 6 }}>
-                  WS: {connected ? "connected" : "disconnected"}
+              <div
+                style={{
+                  marginTop: 16,
+                  paddingTop: 16,
+                  borderTop: "1px solid #e5e7eb",
+                }}
+              >
+                <label style={{ display: "block", marginTop: 0 }}>
+                  WebSocket Connection
+                </label>
+                <div
+                  style={{
+                    fontSize: 12,
+                    marginTop: 8,
+                    marginBottom: 8,
+                    padding: "6px 10px",
+                    background: connected ? "#f0fdf4" : "#fef2f2",
+                    border: `1px solid ${connected ? "#bbf7d0" : "#fecaca"}`,
+                    borderRadius: 4,
+                    color: connected ? "#166534" : "#991b1b",
+                  }}
+                >
+                  Status: {connected ? "Connected" : "Disconnected"}
                 </div>
+                <button onClick={() => setLive((v) => !v)}>
+                  {live ? "Disconnect" : "Connect"}
+                </button>
                 <button
-                  style={{ marginTop: 8 }}
                   onClick={() => {
                     if (!pop || !pop.mice_sample || pop.mice_sample.length < 2)
-                      return alert("Need >=2 mice in population");
+                      return alert("Need at least 2 mice in population");
                     const p1 = pop.mice_sample[0].id || pop.mice_sample[0];
                     const p2 = pop.mice_sample[1].id || pop.mice_sample[1];
                     send({
@@ -194,40 +219,40 @@ export default function SinglePage() {
                   }}
                   disabled={!connected}
                 >
-                  Send Live Breed (demo)
+                  Test Live Breed
                 </button>
               </div>
             </div>
           ) : (
             <div className="panel">
-              <h3>REAL Controls</h3>
-              <label>Strain A</label>
+              <h3>Real Data Controls</h3>
+              <label>First Strain</label>
               <select
                 value={strainA}
                 onChange={(e) => setStrainA(e.target.value)}
               >
-                <option value="">—</option>
+                <option value="">Select strain...</option>
                 {strains.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
-              <label>Strain B</label>
+              <label>Second Strain</label>
               <select
                 value={strainB}
                 onChange={(e) => setStrainB(e.target.value)}
               >
-                <option value="">—</option>
+                <option value="">Select strain...</option>
                 {strains.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
-              <label>Gene</label>
+              <label>Target Gene</label>
               <select value={gene} onChange={(e) => setGene(e.target.value)}>
-                <option value="">—</option>
+                <option value="">Select gene...</option>
                 {genes.map((g) => (
                   <option key={g} value={g}>
                     {g}
@@ -235,8 +260,9 @@ export default function SinglePage() {
                 ))}
               </select>
               <button
+                className="primary"
                 onClick={handlePredict}
-                disabled={loading || !strainA || !strainB}
+                disabled={loading || !strainA || !strainB || !gene}
               >
                 Predict Cross
               </button>
@@ -255,60 +281,135 @@ export default function SinglePage() {
           </section>
 
           <section className="results">
-            <h3>Results</h3>
+            <h3>Analysis Results</h3>
             <GeneticsPanel population={pop} />
             {predictResult ? (
-              <div className="card" style={{ marginTop: 12 }}>
-                <h4>Prediction</h4>
+              <div className="panel" style={{ marginTop: 16 }}>
+                <h4>Cross Prediction Results</h4>
                 <div
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr",
-                    gap: 12,
+                    gap: 16,
+                    marginTop: 12,
                   }}
                 >
                   <div>
-                    <strong>Genotypes</strong>
-                    <ul>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#374151",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Genotype Distribution
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        lineHeight: 1.6,
+                      }}
+                    >
                       {Object.entries(predictResult.genotypes || {}).map(
                         ([k, v]) => (
-                          <li key={k}>
-                            {k}: {Number.isFinite(v) ? v : String(v)}
-                          </li>
+                          <div
+                            key={k}
+                            style={{
+                              padding: "6px 0",
+                              borderBottom: "1px solid #f3f4f6",
+                            }}
+                          >
+                            <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
+                            {Number.isFinite(v) ? v : String(v)}
+                          </div>
                         )
                       )}
-                    </ul>
+                    </div>
                   </div>
                   <div>
-                    <strong>Phenotypes</strong>
-                    <ul>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#374151",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Phenotype Distribution
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#6b7280",
+                        lineHeight: 1.6,
+                      }}
+                    >
                       {Object.entries(predictResult.phenotypes || {}).map(
                         ([k, v]) => (
-                          <li key={k}>
-                            {k}: {v}
-                          </li>
+                          <div
+                            key={k}
+                            style={{
+                              padding: "6px 0",
+                              borderBottom: "1px solid #f3f4f6",
+                            }}
+                          >
+                            <span style={{ fontWeight: 500 }}>{k}:</span> {v}
+                          </div>
                         )
                       )}
-                    </ul>
+                    </div>
                   </div>
                 </div>
-                <div style={{ marginTop: 8 }}>
-                  <strong>Punnett</strong>
-                  <pre style={{ background: "#f7f7f7", padding: 8 }}>
+                <div style={{ marginTop: 16 }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Punnett Square
+                  </div>
+                  <pre className="mini-json">
                     {predictResult.punnett_square}
                   </pre>
                 </div>
-                <div style={{ marginTop: 8 }}>
-                  <strong>Expected Ratios</strong>
-                  <ul>
+                <div style={{ marginTop: 16 }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Expected Ratios
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      lineHeight: 1.6,
+                    }}
+                  >
                     {Object.entries(predictResult.expected_ratios || {}).map(
                       ([k, v]) => (
-                        <li key={k}>
-                          {k}: {typeof v === "number" ? v : String(v)}
-                        </li>
+                        <div
+                          key={k}
+                          style={{
+                            padding: "6px 0",
+                            borderBottom: "1px solid #f3f4f6",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
+                          {typeof v === "number" ? v : String(v)}
+                        </div>
                       )
                     )}
-                  </ul>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -317,16 +418,20 @@ export default function SinglePage() {
 
         <aside className="sp-right">
           <div className="panel">
-            <h3>Console</h3>
-            {loading && <div className="badge">Loading…</div>}
-            {error && <pre className="error">{error}</pre>}
-            <div className="hint">
-              Use the left controls to create/run experiments.
-            </div>
+            <h3>Activity Log</h3>
+            {loading && <div className="badge">Processing...</div>}
+            {error && <div className="error">{error}</div>}
+            {!loading && !error && (
+              <div className="hint">
+                {mode === "SIM"
+                  ? "Create a population to start breeding experiments."
+                  : "Select strains and a gene to predict cross outcomes."}
+              </div>
+            )}
             <div className="console-messages">
               {messages.length === 0 ? (
-                <div style={{ fontSize: 13, color: "#666" }}>
-                  No live messages yet.
+                <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 12 }}>
+                  No activity yet.
                 </div>
               ) : (
                 messages
@@ -334,16 +439,7 @@ export default function SinglePage() {
                   .reverse()
                   .slice(0, 20)
                   .map((m, i) => (
-                    <pre
-                      key={i}
-                      style={{
-                        fontSize: 12,
-                        background: "#fafafa",
-                        padding: 6,
-                        borderRadius: 4,
-                        marginBottom: 6,
-                      }}
-                    >
+                    <pre key={i}>
                       {typeof m === "string" ? m : JSON.stringify(m, null, 2)}
                     </pre>
                   ))
