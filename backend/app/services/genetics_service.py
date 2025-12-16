@@ -73,16 +73,21 @@ class GeneticsService:
         """Breed two mice and return offspring."""
         parent1 = self.get_mouse(parent1_id)
         parent2 = self.get_mouse(parent2_id)
-        
+
         if not parent1 or not parent2:
             raise ValueError("Parent mouse not found")
-        
-        offspring = mate(parent1, parent2, n=n_offspring)
-        
+
+        # Note: mate() function returns 4-6 offspring randomly, doesn't accept n parameter
+        # We'll call mate() and then select the requested number of offspring
+        all_offspring = mate(parent1, parent2)
+
+        # Select requested number of offspring (or all if fewer than requested)
+        offspring = all_offspring[:n_offspring] if n_offspring < len(all_offspring) else all_offspring
+
         # Store offspring
         for mouse in offspring:
             self.mice[str(mouse.id)] = mouse
-        
+
         return offspring
     
     def compute_grm(self, mouse_ids: List[str]) -> List[List[float]]:
