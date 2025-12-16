@@ -64,12 +64,12 @@
 
 .sp-body {
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 20px;
+  padding: 20px;
   flex: 1;
   overflow: hidden;
-  max-width: 100%;
+  width: 100%;
 }
 
 @media (max-width: 1200px) {
@@ -98,12 +98,19 @@
   gap: 16px;
 }
 
-.summary,
+.summary {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .results {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* Panels and Cards */

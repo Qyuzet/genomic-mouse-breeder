@@ -33,12 +33,11 @@ export default function GeneticsPanel({ population }) {
   }
 
   return (
-    <div
-      className="panel"
-      style={{ height: "100%", display: "flex", flexDirection: "column" }}
-    >
-      <h4 style={{ flexShrink: 0 }}>Genetic Analysis</h4>
-      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+    <div className="panel">
+      <h4 style={{ margin: 0, marginBottom: 10, fontSize: 13 }}>
+        Genetic Analysis
+      </h4>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
         <button
           onClick={handleGRM}
           disabled={!population || loading}
@@ -54,7 +53,7 @@ export default function GeneticsPanel({ population }) {
           Inbreeding
         </button>
       </div>
-      <div style={{ marginTop: 10, flex: 1, overflowY: "auto" }}>
+      <div>
         {grm && !grm.error && (
           <div>
             <div

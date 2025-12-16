@@ -55,8 +55,8 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-          gap: 8,
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+          gap: 10,
           flex: 1,
           overflowY: "auto",
           paddingRight: 4,
