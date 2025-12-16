@@ -26,33 +26,35 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
   const mice = population.mice_sample || [];
 
   return (
-    <>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 12,
+          marginBottom: 8,
+          flexShrink: 0,
         }}
       >
         <div>
           <div
             style={{
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 500,
               color: "#374151",
-              marginBottom: 4,
+              marginBottom: 2,
             }}
           >
             {population.name || "Population"}
           </div>
-          <div style={{ fontSize: 11, color: "#6b7280" }}>
+          <div style={{ fontSize: 10, color: "#6b7280" }}>
             Gen {population.generation || 0} • {mice.length} mice
           </div>
         </div>
         <button
           onClick={() => onRefresh && onRefresh(population.id)}
-          style={{ margin: 0, padding: "5px 12px", fontSize: 12 }}
+          style={{ margin: 0, padding: "4px 10px", fontSize: 11 }}
+          title="Reload population data from the server"
         >
           Refresh
         </button>
@@ -61,8 +63,11 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-          gap: 10,
+          gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+          gap: 8,
+          flex: 1,
+          overflowY: "auto",
+          alignContent: "start",
         }}
       >
         {mice.length === 0 && (
@@ -86,6 +91,6 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
           />
         ))}
       </div>
-    </>
+    </div>
   );
 }

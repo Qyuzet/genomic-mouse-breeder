@@ -6,6 +6,17 @@ export default function GeneticsPanel({ population }) {
   const [inb, setInb] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const getRelationshipColor = (value) => {
+    if (typeof value !== "number") return { bg: "#ffffff", text: "#6b7280" };
+
+    if (value >= 0.9) return { bg: "#dc2626", text: "#ffffff" };
+    if (value >= 0.7) return { bg: "#f97316", text: "#ffffff" };
+    if (value >= 0.5) return { bg: "#fbbf24", text: "#000000" };
+    if (value >= 0.3) return { bg: "#a3e635", text: "#000000" };
+    if (value >= 0.1) return { bg: "#86efac", text: "#000000" };
+    return { bg: "#e0f2fe", text: "#000000" };
+  };
+
   async function handleGRM() {
     if (!population) return;
     setLoading(true);
@@ -34,11 +45,12 @@ export default function GeneticsPanel({ population }) {
 
   return (
     <>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <button
           onClick={handleGRM}
           disabled={!population || loading}
           style={{ fontSize: 12, padding: "6px 12px" }}
+          title="Calculate genetic relationships between all mice in the population"
         >
           Compute GRM
         </button>
@@ -46,9 +58,21 @@ export default function GeneticsPanel({ population }) {
           onClick={handleInbreeding}
           disabled={!population || loading}
           style={{ fontSize: 12, padding: "6px 12px" }}
+          title="Calculate inbreeding coefficients for each mouse"
         >
           Inbreeding
         </button>
+      </div>
+      <div
+        style={{
+          fontSize: 9,
+          color: "#9ca3af",
+          marginBottom: 12,
+          lineHeight: 1.3,
+        }}
+      >
+        GRM shows how genetically related mice are. Inbreeding measures genetic
+        similarity from shared ancestors.
       </div>
       <div>
         {grm && !grm.error && (
@@ -58,10 +82,13 @@ export default function GeneticsPanel({ population }) {
                 fontSize: 11,
                 fontWeight: 600,
                 color: "#374151",
-                marginBottom: 6,
+                marginBottom: 2,
               }}
             >
               Genomic Relationship Matrix
+            </div>
+            <div style={{ fontSize: 9, color: "#6b7280", marginBottom: 6 }}>
+              Higher values indicate closer genetic relationships
             </div>
             <div style={{ overflowX: "auto" }}>
               <table
@@ -114,25 +141,110 @@ export default function GeneticsPanel({ population }) {
                       >
                         {String((grm.mouse_ids || [])[i]).slice(0, 4)}
                       </td>
-                      {row.map((val, j) => (
-                        <td
-                          key={j}
-                          style={{
-                            border: "1px solid #e5e7eb",
-                            padding: 4,
-                            textAlign: "center",
-                            color: "#6b7280",
-                          }}
-                        >
-                          {typeof val === "number"
-                            ? val.toFixed(2)
-                            : String(val)}
-                        </td>
-                      ))}
+                      {row.map((val, j) => {
+                        const colors = getRelationshipColor(val);
+                        return (
+                          <td
+                            key={j}
+                            style={{
+                              border: "1px solid #e5e7eb",
+                              padding: 4,
+                              textAlign: "center",
+                              background: colors.bg,
+                              color: colors.text,
+                              fontWeight:
+                                typeof val === "number" && val >= 0.5
+                                  ? 600
+                                  : 400,
+                            }}
+                          >
+                            {typeof val === "number"
+                              ? val.toFixed(2)
+                              : String(val)}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 9,
+                color: "#6b7280",
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    background: "#dc2626",
+                    border: "1px solid #e5e7eb",
+                  }}
+                ></span>
+                ≥0.9 Very High
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    background: "#f97316",
+                    border: "1px solid #e5e7eb",
+                  }}
+                ></span>
+                0.7-0.9 High
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    background: "#fbbf24",
+                    border: "1px solid #e5e7eb",
+                  }}
+                ></span>
+                0.5-0.7 Medium
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    background: "#a3e635",
+                    border: "1px solid #e5e7eb",
+                  }}
+                ></span>
+                0.3-0.5 Low
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    background: "#86efac",
+                    border: "1px solid #e5e7eb",
+                  }}
+                ></span>
+                0.1-0.3 Very Low
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span
+                  style={{
+                    width: 12,
+                    height: 12,
+                    background: "#e0f2fe",
+                    border: "1px solid #e5e7eb",
+                  }}
+                ></span>
+                &lt;0.1 Minimal
+              </span>
             </div>
           </div>
         )}
@@ -148,10 +260,14 @@ export default function GeneticsPanel({ population }) {
                 fontSize: 11,
                 fontWeight: 600,
                 color: "#374151",
-                marginBottom: 6,
+                marginBottom: 2,
               }}
             >
               Inbreeding Coefficients
+            </div>
+            <div style={{ fontSize: 9, color: "#6b7280", marginBottom: 6 }}>
+              Values closer to 1 indicate higher inbreeding (more shared
+              ancestry)
             </div>
             <div className="mini-json">{JSON.stringify(inb, null, 2)}</div>
           </div>

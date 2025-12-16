@@ -2,14 +2,31 @@ import React from "react";
 
 export default function MouseCard({ mouse, onBreed }) {
   const id = mouse.id || mouse;
-  const phenotype = mouse.phenotype || {};
+  const phenotype = mouse.phenotype || mouse.traits || {};
+  const genotype = mouse.genotype || {};
 
   const formatPhenotype = (pheno) => {
-    if (!pheno || typeof pheno !== "object") return "No data";
+    if (
+      !pheno ||
+      typeof pheno !== "object" ||
+      Object.keys(pheno).length === 0
+    ) {
+      if (
+        genotype &&
+        typeof genotype === "object" &&
+        Object.keys(genotype).length > 0
+      ) {
+        const entries = Object.entries(genotype);
+        return entries
+          .slice(0, 2)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+      }
+      return `Gen ${mouse.generation || 0}`;
+    }
     const entries = Object.entries(pheno);
-    if (entries.length === 0) return "No data";
     return entries
-      .slice(0, 3)
+      .slice(0, 2)
       .map(([k, v]) => `${k}: ${v}`)
       .join(", ");
   };
@@ -18,8 +35,8 @@ export default function MouseCard({ mouse, onBreed }) {
     <div
       style={{
         border: "1px solid #e5e7eb",
-        padding: 8,
-        borderRadius: 6,
+        padding: 6,
+        borderRadius: 4,
         background: "#fff",
         transition: "all 0.2s ease",
       }}
@@ -32,8 +49,8 @@ export default function MouseCard({ mouse, onBreed }) {
     >
       <div
         style={{
-          fontSize: 11,
-          marginBottom: 6,
+          fontSize: 10,
+          marginBottom: 4,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -44,38 +61,42 @@ export default function MouseCard({ mouse, onBreed }) {
         </span>
         <span
           style={{
-            fontSize: 10,
+            fontSize: 9,
             color: "#6b7280",
             background: "#f3f4f6",
-            padding: "1px 5px",
-            borderRadius: 3,
+            padding: "1px 4px",
+            borderRadius: 2,
             border: "1px solid #e5e7eb",
           }}
+          title={`Generation ${
+            mouse.generation ?? "0"
+          } - number of breeding cycles from original population`}
         >
           G{mouse.generation ?? "0"}
         </span>
       </div>
       <div
         style={{
-          fontSize: 10,
+          fontSize: 9,
           color: "#6b7280",
-          marginBottom: 8,
+          marginBottom: 6,
           lineHeight: 1.3,
-          height: "26px",
+          height: "22px",
           overflow: "hidden",
         }}
       >
         {formatPhenotype(phenotype)}
       </div>
-      <div style={{ display: "flex", gap: 4 }}>
+      <div style={{ display: "flex", gap: 3 }}>
         <button
           onClick={onBreed}
           style={{
             flex: 1,
             margin: 0,
-            padding: "4px 8px",
-            fontSize: 11,
+            padding: "3px 6px",
+            fontSize: 10,
           }}
+          title="Breed this mouse with another from the population"
         >
           Breed
         </button>
@@ -83,8 +104,8 @@ export default function MouseCard({ mouse, onBreed }) {
           onClick={() => alert(JSON.stringify(mouse, null, 2))}
           style={{
             margin: 0,
-            padding: "4px 8px",
-            fontSize: 11,
+            padding: "3px 6px",
+            fontSize: 10,
           }}
         >
           Info

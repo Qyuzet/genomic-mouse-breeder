@@ -38,6 +38,26 @@ export default function SinglePage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `WebSocket: ${JSON.stringify(lastMsg).slice(0, 100)}`,
+        },
+      ]);
+
+      if (lastMsg.type === "breed_complete" && pop && pop.id) {
+        api
+          .getPopulation(pop.id)
+          .then(setPop)
+          .catch(() => {});
+      }
+    }
+  }, [messages]);
+
   async function handleCreatePopulation() {
     setLoading(true);
     setError(null);
@@ -198,13 +218,38 @@ export default function SinglePage() {
           {mode === "SIM" ? (
             <div className="panel">
               <h3>Simulation Controls</h3>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#6b7280",
+                  marginBottom: 12,
+                  lineHeight: 1.4,
+                }}
+              >
+                Create a virtual mouse population to simulate breeding
+                experiments and genetic analysis.
+              </div>
+
               <label>Population Name</label>
               <input
                 value={popName}
                 onChange={(e) => setPopName(e.target.value)}
-                placeholder="Enter population name"
+                placeholder="e.g., Experiment 1"
               />
-              <label>Population Size</label>
+
+              <label>
+                Population Size
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "#9ca3af",
+                    fontWeight: 400,
+                    marginLeft: 6,
+                  }}
+                >
+                  (10-100 mice)
+                </span>
+              </label>
               <input
                 type="number"
                 value={popSize}
@@ -212,16 +257,26 @@ export default function SinglePage() {
                 min="10"
                 max="100"
               />
+
               <button
                 className="primary"
                 onClick={handleCreatePopulation}
                 disabled={loading}
+                title="Generate a new population with random genetic diversity"
               >
                 Create Population
               </button>
-              <button onClick={handleAdvance} disabled={!pop || loading}>
+
+              <button
+                onClick={handleAdvance}
+                disabled={!pop || loading}
+                title="Simulate natural selection and advance to the next generation"
+              >
                 Advance Generation
               </button>
+              <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
+                Advances the population through selective breeding
+              </div>
               <div
                 style={{
                   marginTop: 16,
@@ -232,6 +287,16 @@ export default function SinglePage() {
                 <label style={{ display: "block", marginTop: 0 }}>
                   WebSocket Connection
                 </label>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: "#6b7280",
+                    marginBottom: 8,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Real-time connection for live breeding updates
+                </div>
                 <div
                   style={{
                     fontSize: 12,
@@ -265,18 +330,47 @@ export default function SinglePage() {
                     });
                   }}
                   disabled={!connected}
+                  title="Test real-time breeding via WebSocket"
                 >
                   Test Live Breed
                 </button>
+                <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
+                  Breeds first two mice in real-time
+                </div>
               </div>
             </div>
           ) : (
             <div className="panel">
               <h3>Real Data Controls</h3>
-              <label>First Strain</label>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#6b7280",
+                  marginBottom: 12,
+                  lineHeight: 1.4,
+                }}
+              >
+                Use real mouse strain data to predict genetic crosses and
+                outcomes.
+              </div>
+
+              <label>
+                First Strain
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "#9ca3af",
+                    fontWeight: 400,
+                    marginLeft: 6,
+                  }}
+                >
+                  (Parent A)
+                </span>
+              </label>
               <select
                 value={strainA}
                 onChange={(e) => setStrainA(e.target.value)}
+                title="Common lab mouse strains with known genetic profiles"
               >
                 <option value="">Select strain...</option>
                 {strains.map((s) => (
@@ -285,10 +379,39 @@ export default function SinglePage() {
                   </option>
                 ))}
               </select>
-              <label>Second Strain</label>
+              <div
+                style={{
+                  fontSize: 9,
+                  color: "#9ca3af",
+                  marginTop: 2,
+                  marginBottom: 8,
+                  lineHeight: 1.3,
+                }}
+              >
+                C57BL/6J: Black coat, common reference
+                <br />
+                DBA/2J: Dilute brown, hearing loss model
+                <br />
+                BALB/cJ: White coat, immunology research
+              </div>
+
+              <label>
+                Second Strain
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "#9ca3af",
+                    fontWeight: 400,
+                    marginLeft: 6,
+                  }}
+                >
+                  (Parent B)
+                </span>
+              </label>
               <select
                 value={strainB}
                 onChange={(e) => setStrainB(e.target.value)}
+                title="Select a second strain to cross with"
               >
                 <option value="">Select strain...</option>
                 {strains.map((s) => (
@@ -297,8 +420,25 @@ export default function SinglePage() {
                   </option>
                 ))}
               </select>
-              <label>Target Gene</label>
-              <select value={gene} onChange={(e) => setGene(e.target.value)}>
+
+              <label>
+                Target Gene
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "#9ca3af",
+                    fontWeight: 400,
+                    marginLeft: 6,
+                  }}
+                >
+                  (Trait to analyze)
+                </span>
+              </label>
+              <select
+                value={gene}
+                onChange={(e) => setGene(e.target.value)}
+                title="Select which genetic trait to predict"
+              >
                 <option value="">Select gene...</option>
                 {genes.map((g) => (
                   <option key={g} value={g}>
@@ -306,10 +446,12 @@ export default function SinglePage() {
                   </option>
                 ))}
               </select>
+
               <button
                 className="primary"
                 onClick={handlePredict}
                 disabled={loading || !strainA || !strainB || !gene}
+                title="Predict offspring genotypes from this cross"
               >
                 Predict Cross
               </button>
@@ -318,153 +460,46 @@ export default function SinglePage() {
         </aside>
 
         <main className="sp-main">
-          <div className="panel">
-            <h3>Dashboard</h3>
-            <PopulationList
-              population={pop}
-              onBreed={handleBreedAction}
-              onRefresh={handleRefresh}
-            />
-          </div>
-
-          <div className="panel">
-            <h3>Analysis Results</h3>
-            <GeneticsPanel population={pop} />
-          </div>
-
-          {predictResult ? (
-            <div className="panel">
-              <h4>Cross Prediction Results</h4>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 16,
-                  marginTop: 12,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: "#374151",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Genotype Distribution
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#6b7280",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {Object.entries(predictResult.genotypes || {}).map(
-                      ([k, v]) => (
-                        <div
-                          key={k}
-                          style={{
-                            padding: "6px 0",
-                            borderBottom: "1px solid #f3f4f6",
-                          }}
-                        >
-                          <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
-                          {Number.isFinite(v) ? v : String(v)}
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: "#374151",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Phenotype Distribution
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#6b7280",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {Object.entries(predictResult.phenotypes || {}).map(
-                      ([k, v]) => (
-                        <div
-                          key={k}
-                          style={{
-                            padding: "6px 0",
-                            borderBottom: "1px solid #f3f4f6",
-                          }}
-                        >
-                          <span style={{ fontWeight: 500 }}>{k}:</span> {v}
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#374151",
-                    marginBottom: 8,
-                  }}
-                >
-                  Punnett Square
-                </div>
-                <pre className="mini-json">{predictResult.punnett_square}</pre>
-              </div>
-              <div style={{ marginTop: 16 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#374151",
-                    marginBottom: 8,
-                  }}
-                >
-                  Expected Ratios
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "#6b7280",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {Object.entries(predictResult.expected_ratios || {}).map(
-                    ([k, v]) => (
-                      <div
-                        key={k}
-                        style={{
-                          padding: "6px 0",
-                          borderBottom: "1px solid #f3f4f6",
-                        }}
-                      >
-                        <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
-                        {typeof v === "number" ? v : String(v)}
-                      </div>
-                    )
-                  )}
-                </div>
+          <div
+            className="panel"
+            style={{
+              height: "calc(100vh - 80px)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div style={{ flexShrink: 0 }}>
+              <h3 style={{ marginBottom: 4 }}>Dashboard</h3>
+              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>
+                View and manage your mouse population
               </div>
             </div>
-          ) : null}
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              <PopulationList
+                population={pop}
+                onBreed={handleBreedAction}
+                onRefresh={handleRefresh}
+              />
+            </div>
+          </div>
         </main>
+
+        <aside className="sp-middle">
+          <div className="panel">
+            <h3 style={{ marginBottom: 4 }}>Analysis Results</h3>
+            <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}>
+              Genetic relationship matrix and inbreeding coefficients
+            </div>
+            <GeneticsPanel population={pop} />
+          </div>
+        </aside>
 
         <aside className="sp-right">
           <div className="panel">
-            <h3>Activity Log</h3>
+            <h3 style={{ marginBottom: 4 }}>Activity Log</h3>
+            <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>
+              Track all breeding events and system updates
+            </div>
             {loading && <div className="badge">Processing...</div>}
             {error && <div className="error">{error}</div>}
             {!loading && !error && activityLog.length === 0 && (
@@ -513,6 +548,154 @@ export default function SinglePage() {
               )}
             </div>
           </div>
+
+          {predictResult ? (
+            <div className="panel" style={{ marginTop: 16 }}>
+              <h3 style={{ marginBottom: 4 }}>Cross Prediction Results</h3>
+              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}>
+                Expected genetic outcomes from crossing the selected strains
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                  marginTop: 12,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Genotype Distribution
+                  </div>
+                  <div
+                    style={{ fontSize: 9, color: "#9ca3af", marginBottom: 6 }}
+                  >
+                    Probability of each genetic combination
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {Object.entries(predictResult.genotypes || {}).map(
+                      ([k, v]) => (
+                        <div
+                          key={k}
+                          style={{
+                            padding: "6px 0",
+                            borderBottom: "1px solid #f3f4f6",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
+                          {Number.isFinite(v) ? v : String(v)}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Phenotype Distribution
+                  </div>
+                  <div
+                    style={{ fontSize: 9, color: "#9ca3af", marginBottom: 6 }}
+                  >
+                    Observable traits in offspring
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {Object.entries(predictResult.phenotypes || {}).map(
+                      ([k, v]) => (
+                        <div
+                          key={k}
+                          style={{
+                            padding: "6px 0",
+                            borderBottom: "1px solid #f3f4f6",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>{k}:</span> {v}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#374151",
+                    marginBottom: 4,
+                  }}
+                >
+                  Punnett Square
+                </div>
+                <div style={{ fontSize: 9, color: "#9ca3af", marginBottom: 6 }}>
+                  Visual representation of all possible genetic combinations
+                </div>
+                <pre className="mini-json">{predictResult.punnett_square}</pre>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#374151",
+                    marginBottom: 4,
+                  }}
+                >
+                  Expected Ratios
+                </div>
+                <div style={{ fontSize: 9, color: "#9ca3af", marginBottom: 6 }}>
+                  Mendelian inheritance ratios for this cross
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#6b7280",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {Object.entries(predictResult.expected_ratios || {}).map(
+                    ([k, v]) => (
+                      <div
+                        key={k}
+                        style={{
+                          padding: "6px 0",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
+                        {typeof v === "number" ? v : String(v)}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </aside>
       </div>
     </div>
