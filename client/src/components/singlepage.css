@@ -86,31 +86,14 @@
 /* Sidebar Columns */
 .sp-left,
 .sp-right {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .sp-main {
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   gap: 16px;
-}
-
-.summary {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.results {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 
 /* Panels and Cards */

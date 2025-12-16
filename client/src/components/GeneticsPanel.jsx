@@ -33,22 +33,19 @@ export default function GeneticsPanel({ population }) {
   }
 
   return (
-    <div className="panel">
-      <h4 style={{ margin: 0, marginBottom: 10, fontSize: 13 }}>
-        Genetic Analysis
-      </h4>
-      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+    <>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <button
           onClick={handleGRM}
           disabled={!population || loading}
-          style={{ fontSize: 11, padding: "5px 10px" }}
+          style={{ fontSize: 12, padding: "6px 12px" }}
         >
-          GRM
+          Compute GRM
         </button>
         <button
           onClick={handleInbreeding}
           disabled={!population || loading}
-          style={{ fontSize: 11, padding: "5px 10px" }}
+          style={{ fontSize: 12, padding: "6px 12px" }}
         >
           Inbreeding
         </button>
@@ -164,6 +161,6 @@ export default function GeneticsPanel({ population }) {
           <div className="error">Inbreeding Error: {inb.error}</div>
         )}
       </div>
-    </div>
+    </>
   );
 }

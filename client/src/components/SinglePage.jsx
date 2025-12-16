@@ -318,181 +318,148 @@ export default function SinglePage() {
         </aside>
 
         <main className="sp-main">
-          <section className="summary">
-            <div
-              className="panel"
-              style={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <h3 style={{ flexShrink: 0 }}>Dashboard</h3>
-              <div style={{ flex: 1, overflow: "hidden" }}>
-                <PopulationList
-                  population={pop}
-                  onBreed={handleBreedAction}
-                  onRefresh={handleRefresh}
-                />
-              </div>
-            </div>
-          </section>
+          <div className="panel">
+            <h3>Dashboard</h3>
+            <PopulationList
+              population={pop}
+              onBreed={handleBreedAction}
+              onRefresh={handleRefresh}
+            />
+          </div>
 
-          <section className="results">
-            <h3
-              style={{
-                flexShrink: 0,
-                margin: 0,
-                marginBottom: 12,
-                fontSize: 14,
-                fontWeight: 600,
-                color: "#111827",
-              }}
-            >
-              Analysis Results
-            </h3>
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-              }}
-            >
-              <GeneticsPanel population={pop} />
-              {predictResult ? (
-                <div className="panel">
-                  <h4>Cross Prediction Results</h4>
+          <div className="panel">
+            <h3>Analysis Results</h3>
+            <GeneticsPanel population={pop} />
+          </div>
+
+          {predictResult ? (
+            <div className="panel">
+              <h4>Cross Prediction Results</h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                  marginTop: 12,
+                }}
+              >
+                <div>
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 16,
-                      marginTop: 12,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: 8,
                     }}
                   >
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#374151",
-                          marginBottom: 8,
-                        }}
-                      >
-                        Genotype Distribution
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "#6b7280",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {Object.entries(predictResult.genotypes || {}).map(
-                          ([k, v]) => (
-                            <div
-                              key={k}
-                              style={{
-                                padding: "6px 0",
-                                borderBottom: "1px solid #f3f4f6",
-                              }}
-                            >
-                              <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
-                              {Number.isFinite(v) ? v : String(v)}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#374151",
-                          marginBottom: 8,
-                        }}
-                      >
-                        Phenotype Distribution
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: "#6b7280",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {Object.entries(predictResult.phenotypes || {}).map(
-                          ([k, v]) => (
-                            <div
-                              key={k}
-                              style={{
-                                padding: "6px 0",
-                                borderBottom: "1px solid #f3f4f6",
-                              }}
-                            >
-                              <span style={{ fontWeight: 500 }}>{k}:</span> {v}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
+                    Genotype Distribution
                   </div>
-                  <div style={{ marginTop: 16 }}>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#374151",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Punnett Square
-                    </div>
-                    <pre className="mini-json">
-                      {predictResult.punnett_square}
-                    </pre>
-                  </div>
-                  <div style={{ marginTop: 16 }}>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#374151",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Expected Ratios
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#6b7280",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {Object.entries(predictResult.expected_ratios || {}).map(
-                        ([k, v]) => (
-                          <div
-                            key={k}
-                            style={{
-                              padding: "6px 0",
-                              borderBottom: "1px solid #f3f4f6",
-                            }}
-                          >
-                            <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
-                            {typeof v === "number" ? v : String(v)}
-                          </div>
-                        )
-                      )}
-                    </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {Object.entries(predictResult.genotypes || {}).map(
+                      ([k, v]) => (
+                        <div
+                          key={k}
+                          style={{
+                            padding: "6px 0",
+                            borderBottom: "1px solid #f3f4f6",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
+                          {Number.isFinite(v) ? v : String(v)}
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
-              ) : null}
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Phenotype Distribution
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {Object.entries(predictResult.phenotypes || {}).map(
+                      ([k, v]) => (
+                        <div
+                          key={k}
+                          style={{
+                            padding: "6px 0",
+                            borderBottom: "1px solid #f3f4f6",
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>{k}:</span> {v}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#374151",
+                    marginBottom: 8,
+                  }}
+                >
+                  Punnett Square
+                </div>
+                <pre className="mini-json">{predictResult.punnett_square}</pre>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#374151",
+                    marginBottom: 8,
+                  }}
+                >
+                  Expected Ratios
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#6b7280",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {Object.entries(predictResult.expected_ratios || {}).map(
+                    ([k, v]) => (
+                      <div
+                        key={k}
+                        style={{
+                          padding: "6px 0",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <span style={{ fontWeight: 500 }}>{k}:</span>{" "}
+                        {typeof v === "number" ? v : String(v)}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
-          </section>
+          ) : null}
         </main>
 
         <aside className="sp-right">
