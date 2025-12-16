@@ -24,6 +24,7 @@ export default function SinglePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [live, setLive] = useState(false);
+  const [activityLog, setActivityLog] = useState([]);
   const { connected, messages, send } = useBreedingSocket({ enabled: live });
 
   useEffect(() => {
@@ -48,8 +49,23 @@ export default function SinglePage() {
       };
       const res = await api.createPopulation(body);
       setPop(res);
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Created population "${popName}" with ${popSize} mice`,
+        },
+      ]);
     } catch (e) {
       setError(e.message);
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Error: ${e.message}`,
+          error: true,
+        },
+      ]);
     }
     setLoading(false);
   }
@@ -62,8 +78,23 @@ export default function SinglePage() {
       const res = await api.advancePopulation(pop.id);
       const refreshed = await api.getPopulation(pop.id);
       setPop(refreshed);
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Advanced to generation ${refreshed.generation || "N/A"}`,
+        },
+      ]);
     } catch (e) {
       setError(e.message);
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Error advancing generation: ${e.message}`,
+          error: true,
+        },
+      ]);
     }
     setLoading(false);
   }
@@ -97,6 +128,17 @@ export default function SinglePage() {
     setError(null);
     try {
       const res = await api.breed(payload);
+      const offspringCount = res.offspring?.length || 0;
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Bred mouse #${String(mouse.id).slice(
+            0,
+            6
+          )} - ${offspringCount} offspring created`,
+        },
+      ]);
       // optionally refresh population if server supports it
       try {
         const refreshed = await api.getPopulation(pop.id);
@@ -104,11 +146,16 @@ export default function SinglePage() {
       } catch (e) {
         /* ignore */
       }
-      // append message
-      // eslint-disable-next-line no-console
-      console.log("breed result", res);
     } catch (e) {
       setError(e.message);
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Error breeding: ${e.message}`,
+          error: true,
+        },
+      ]);
     }
     setLoading(false);
   }
@@ -272,17 +319,39 @@ export default function SinglePage() {
 
         <main className="sp-main">
           <section className="summary">
-            <h3>Dashboard</h3>
-            <PopulationList
-              population={pop}
-              onBreed={handleBreedAction}
-              onRefresh={handleRefresh}
-            />
+            <div
+              className="panel"
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <h3 style={{ flexShrink: 0 }}>Dashboard</h3>
+              <div style={{ flex: 1, overflow: "hidden" }}>
+                <PopulationList
+                  population={pop}
+                  onBreed={handleBreedAction}
+                  onRefresh={handleRefresh}
+                />
+              </div>
+            </div>
           </section>
 
           <section className="results">
-            <h3>Analysis Results</h3>
-            <GeneticsPanel population={pop} />
+            <div
+              className="panel"
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <h3 style={{ flexShrink: 0 }}>Analysis Results</h3>
+              <div style={{ flex: 1, overflow: "hidden" }}>
+                <GeneticsPanel population={pop} />
+              </div>
+            </div>
             {predictResult ? (
               <div className="panel" style={{ marginTop: 16 }}>
                 <h4>Cross Prediction Results</h4>
@@ -421,7 +490,7 @@ export default function SinglePage() {
             <h3>Activity Log</h3>
             {loading && <div className="badge">Processing...</div>}
             {error && <div className="error">{error}</div>}
-            {!loading && !error && (
+            {!loading && !error && activityLog.length === 0 && (
               <div className="hint">
                 {mode === "SIM"
                   ? "Create a population to start breeding experiments."
@@ -429,19 +498,40 @@ export default function SinglePage() {
               </div>
             )}
             <div className="console-messages">
-              {messages.length === 0 ? (
+              {activityLog.length === 0 ? (
                 <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 12 }}>
                   No activity yet.
                 </div>
               ) : (
-                messages
+                activityLog
                   .slice()
                   .reverse()
-                  .slice(0, 20)
-                  .map((m, i) => (
-                    <pre key={i}>
-                      {typeof m === "string" ? m : JSON.stringify(m, null, 2)}
-                    </pre>
+                  .slice(0, 50)
+                  .map((log, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        fontSize: 12,
+                        padding: "8px 10px",
+                        marginBottom: 6,
+                        borderRadius: 4,
+                        border: "1px solid #e5e7eb",
+                        background: log.error ? "#fef2f2" : "#f9fafb",
+                        color: log.error ? "#dc2626" : "#374151",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          marginBottom: 2,
+                          fontSize: 11,
+                          color: "#6b7280",
+                        }}
+                      >
+                        {log.time}
+                      </div>
+                      <div>{log.message}</div>
+                    </div>
                   ))
               )}
             </div>

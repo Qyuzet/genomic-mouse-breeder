@@ -26,26 +26,27 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
   const mice = population.mice_sample || [];
 
   return (
-    <div className="panel">
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 12,
+          marginBottom: 10,
+          flexShrink: 0,
         }}
       >
         <div>
-          <h4 style={{ margin: 0, marginBottom: 4 }}>
+          <h4 style={{ margin: 0, marginBottom: 2, fontSize: 12 }}>
             {population.name || "Population"}
           </h4>
-          <div style={{ fontSize: 12, color: "#6b7280" }}>
-            Generation {population.generation || 0} • {mice.length} mice
+          <div style={{ fontSize: 10, color: "#6b7280" }}>
+            Gen {population.generation || 0} • {mice.length} mice
           </div>
         </div>
         <button
           onClick={() => onRefresh && onRefresh(population.id)}
-          style={{ margin: 0 }}
+          style={{ margin: 0, padding: "4px 10px", fontSize: 11 }}
         >
           Refresh
         </button>
@@ -54,9 +55,12 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-          gap: 10,
-          marginTop: 16,
+          gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+          gap: 8,
+          flex: 1,
+          overflowY: "auto",
+          paddingRight: 4,
+          alignContent: "start",
         }}
       >
         {mice.length === 0 && (
@@ -66,7 +70,7 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
               color: "#9ca3af",
               textAlign: "center",
               padding: "20px",
-              fontSize: 13,
+              fontSize: 11,
             }}
           >
             No mice in this population

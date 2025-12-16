@@ -18,7 +18,7 @@ export default function MouseCard({ mouse, onBreed }) {
     <div
       style={{
         border: "1px solid #e5e7eb",
-        padding: 12,
+        padding: 8,
         borderRadius: 6,
         background: "#fff",
         transition: "all 0.2s ease",
@@ -32,47 +32,49 @@ export default function MouseCard({ mouse, onBreed }) {
     >
       <div
         style={{
-          fontSize: 13,
-          marginBottom: 8,
+          fontSize: 11,
+          marginBottom: 6,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
         <span style={{ fontWeight: 600, color: "#111827" }}>
-          #{String(id).slice(0, 8)}
+          #{String(id).slice(0, 6)}
         </span>
         <span
           style={{
-            fontSize: 11,
+            fontSize: 10,
             color: "#6b7280",
             background: "#f3f4f6",
-            padding: "2px 6px",
-            borderRadius: 4,
+            padding: "1px 5px",
+            borderRadius: 3,
             border: "1px solid #e5e7eb",
           }}
         >
-          Gen {mouse.generation ?? "0"}
+          G{mouse.generation ?? "0"}
         </span>
       </div>
       <div
         style={{
-          fontSize: 12,
+          fontSize: 10,
           color: "#6b7280",
-          marginBottom: 10,
-          lineHeight: 1.4,
+          marginBottom: 8,
+          lineHeight: 1.3,
+          height: "26px",
+          overflow: "hidden",
         }}
       >
         {formatPhenotype(phenotype)}
       </div>
-      <div style={{ display: "flex", gap: 6 }}>
+      <div style={{ display: "flex", gap: 4 }}>
         <button
           onClick={onBreed}
           style={{
             flex: 1,
             margin: 0,
-            padding: "6px 10px",
-            fontSize: 12,
+            padding: "4px 8px",
+            fontSize: 11,
           }}
         >
           Breed
@@ -81,8 +83,8 @@ export default function MouseCard({ mouse, onBreed }) {
           onClick={() => alert(JSON.stringify(mouse, null, 2))}
           style={{
             margin: 0,
-            padding: "6px 10px",
-            fontSize: 12,
+            padding: "4px 8px",
+            fontSize: 11,
           }}
         >
           Info

@@ -33,25 +33,36 @@ export default function GeneticsPanel({ population }) {
   }
 
   return (
-    <div className="panel">
-      <h4>Genetic Analysis</h4>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={handleGRM} disabled={!population || loading}>
-          Compute GRM
+    <div
+      className="panel"
+      style={{ height: "100%", display: "flex", flexDirection: "column" }}
+    >
+      <h4 style={{ flexShrink: 0 }}>Genetic Analysis</h4>
+      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <button
+          onClick={handleGRM}
+          disabled={!population || loading}
+          style={{ fontSize: 11, padding: "5px 10px" }}
+        >
+          GRM
         </button>
-        <button onClick={handleInbreeding} disabled={!population || loading}>
+        <button
+          onClick={handleInbreeding}
+          disabled={!population || loading}
+          style={{ fontSize: 11, padding: "5px 10px" }}
+        >
           Inbreeding
         </button>
       </div>
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 10, flex: 1, overflowY: "auto" }}>
         {grm && !grm.error && (
           <div>
             <div
               style={{
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: 600,
                 color: "#374151",
-                marginBottom: 8,
+                marginBottom: 6,
               }}
             >
               Genomic Relationship Matrix
@@ -61,7 +72,7 @@ export default function GeneticsPanel({ population }) {
                 style={{
                   borderCollapse: "collapse",
                   width: "100%",
-                  fontSize: 12,
+                  fontSize: 10,
                 }}
               >
                 <thead>
@@ -69,7 +80,7 @@ export default function GeneticsPanel({ population }) {
                     <th
                       style={{
                         border: "1px solid #e5e7eb",
-                        padding: 8,
+                        padding: 4,
                         textAlign: "left",
                         fontWeight: 600,
                         color: "#374151",
@@ -82,13 +93,13 @@ export default function GeneticsPanel({ population }) {
                         key={id}
                         style={{
                           border: "1px solid #e5e7eb",
-                          padding: 8,
+                          padding: 4,
                           textAlign: "center",
                           fontWeight: 600,
                           color: "#374151",
                         }}
                       >
-                        {String(id).slice(0, 6)}
+                        {String(id).slice(0, 4)}
                       </th>
                     ))}
                   </tr>
@@ -99,26 +110,26 @@ export default function GeneticsPanel({ population }) {
                       <td
                         style={{
                           border: "1px solid #e5e7eb",
-                          padding: 8,
+                          padding: 4,
                           fontWeight: 500,
                           background: "#f9fafb",
                           color: "#374151",
                         }}
                       >
-                        {String((grm.mouse_ids || [])[i]).slice(0, 6)}
+                        {String((grm.mouse_ids || [])[i]).slice(0, 4)}
                       </td>
                       {row.map((val, j) => (
                         <td
                           key={j}
                           style={{
                             border: "1px solid #e5e7eb",
-                            padding: 8,
+                            padding: 4,
                             textAlign: "center",
                             color: "#6b7280",
                           }}
                         >
                           {typeof val === "number"
-                            ? val.toFixed(3)
+                            ? val.toFixed(2)
                             : String(val)}
                         </td>
                       ))}
@@ -135,13 +146,13 @@ export default function GeneticsPanel({ population }) {
         )}
 
         {inb && !inb.error && (
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 10 }}>
             <div
               style={{
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: 600,
                 color: "#374151",
-                marginBottom: 8,
+                marginBottom: 6,
               }}
             >
               Inbreeding Coefficients
