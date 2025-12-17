@@ -3,9 +3,13 @@ import * as api from "../api";
 import useBreedingSocket from "../hooks/useBreedingSocket";
 import PopulationList from "./PopulationList";
 import GeneticsPanel from "./GeneticsPanel";
+import PartnerSelectionDialog from "./PartnerSelectionDialog";
+import TabLayout from "./TabLayout";
+import CollapsibleSection from "./CollapsibleSection";
 import "./singlepage.css";
 
 export default function SinglePage() {
+  const [activeTab, setActiveTab] = useState("simulation");
   const [mode, setMode] = useState("SIM");
 
   // SIM state
@@ -16,6 +20,7 @@ export default function SinglePage() {
   // REAL state
   const [strains, setStrains] = useState([]);
   const [genes, setGenes] = useState([]);
+  const [geneDetails, setGeneDetails] = useState({});
   const [strainA, setStrainA] = useState("");
   const [strainB, setStrainB] = useState("");
   const [gene, setGene] = useState("");
@@ -23,9 +28,15 @@ export default function SinglePage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [live, setLive] = useState(false);
   const [activityLog, setActivityLog] = useState([]);
-  const { connected, messages, send } = useBreedingSocket({ enabled: live });
+
+  // Partner selection dialog
+  const [showPartnerDialog, setShowPartnerDialog] = useState(false);
+  const [selectedMouseForBreeding, setSelectedMouseForBreeding] =
+    useState(null);
+
+  // Auto-connect WebSocket in background
+  const { connected, messages, send } = useBreedingSocket({ enabled: true });
 
   useEffect(() => {
     api
@@ -34,7 +45,10 @@ export default function SinglePage() {
       .catch(() => {});
     api
       .getGenes()
-      .then((r) => setGenes(r.genes || []))
+      .then((r) => {
+        setGenes(r.genes || []);
+        setGeneDetails(r.details || {});
+      })
       .catch(() => {});
   }, []);
 
@@ -46,18 +60,18 @@ export default function SinglePage() {
 
       if (lastMsg.type === "breed_result" && lastMsg.status === "success") {
         const count = lastMsg.data?.count || 0;
-        logMessage = `Live Breed Success: ${count} offspring created`;
+        logMessage = `Breeding successful: ${count} offspring added to population`;
       } else if (
         lastMsg.type === "breed_result" &&
         lastMsg.status === "error"
       ) {
-        logMessage = `Live Breed Error: ${lastMsg.message || "Unknown error"}`;
+        logMessage = `Breeding failed: ${lastMsg.message || "Unknown error"}`;
       } else if (
         lastMsg.type === "generation_advanced" &&
         lastMsg.status === "success"
       ) {
         const gen = lastMsg.data?.generation || "?";
-        logMessage = `Generation advanced to ${gen}`;
+        logMessage = `Advanced to generation ${gen}`;
       }
 
       setActivityLog((prev) => [
@@ -68,6 +82,7 @@ export default function SinglePage() {
         },
       ]);
 
+      // Auto-refresh population after WebSocket breeding
       if (
         lastMsg.type === "breed_result" &&
         lastMsg.status === "success" &&
@@ -80,7 +95,7 @@ export default function SinglePage() {
           .catch(() => {});
       }
     }
-  }, [messages]);
+  }, [messages, pop]);
 
   async function handleCreatePopulation() {
     setLoading(true);
@@ -158,49 +173,93 @@ export default function SinglePage() {
 
   async function handleBreedAction(mouse) {
     if (!mouse) return;
+    if (!pop) return alert("No population created yet");
+
+    // Refresh population to ensure all mice are in backend registry
+    try {
+      const refreshed = await api.getPopulation(pop.id);
+      setPop(refreshed);
+    } catch (e) {
+      console.error("Failed to refresh population before breeding:", e);
+    }
+
+    // Open partner selection dialog
+    setSelectedMouseForBreeding(mouse);
+    setShowPartnerDialog(true);
+  }
+
+  async function handleBreedWithPartner(mouse, partner, offspringCount) {
+    if (!mouse || !partner) return;
     if (!pop) return alert("No population to update");
-    const mice = pop.mice_sample || [];
-    const partner =
-      mice.find((m) => (m.id || m) !== (mouse.id || mouse)) || mice[0];
-    if (!partner) return alert("No partner available");
+
     const payload = {
       parent1_id: String(mouse.id || mouse),
       parent2_id: String(partner.id || partner),
-      n_offspring: 2,
+      n_offspring: offspringCount || 2,
     };
+
     setLoading(true);
     setError(null);
+
     try {
       const res = await api.breed(payload);
-      const offspringCount = res.offspring?.length || 0;
+      const count = res.offspring?.length || 0;
+
+      // Build detailed offspring summary
+      const offspringDetails =
+        res.offspring
+          ?.map((o, i) => {
+            const coat = o.genome_summary?.coat_color || "unknown";
+            const size = o.genome_summary?.size || "unknown";
+            return `#${i + 1}: ${coat}, ${size}`;
+          })
+          .join(" | ") || "";
+
+      const mainMessage = `Bred Mouse #${String(mouse.id).slice(
+        0,
+        6
+      )} × Mouse #${String(partner.id).slice(0, 6)} → ${count} offspring`;
+
+      const detailedMessage = offspringDetails
+        ? `${mainMessage}\nOffspring: ${offspringDetails}`
+        : mainMessage;
+
       setActivityLog((prev) => [
         ...prev,
         {
           time: new Date().toLocaleTimeString(),
-          message: `Bred mouse #${String(mouse.id).slice(
-            0,
-            6
-          )} - ${offspringCount} offspring created`,
+          message: detailedMessage,
         },
       ]);
-      // optionally refresh population if server supports it
+
+      // Auto-refresh population
       try {
         const refreshed = await api.getPopulation(pop.id);
         setPop(refreshed);
       } catch (e) {
-        /* ignore */
+        console.error("Failed to refresh population:", e);
       }
     } catch (e) {
-      setError(e.message);
+      let errorMsg = "Unknown error";
+
+      if (e.response?.data?.detail) {
+        errorMsg = e.response.data.detail;
+      } else if (e.message) {
+        errorMsg = e.message;
+      }
+
+      setError(errorMsg);
+
       setActivityLog((prev) => [
         ...prev,
         {
           time: new Date().toLocaleTimeString(),
-          message: `Error breeding: ${e.message}`,
+          message: `Breeding failed: ${errorMsg}`,
           error: true,
         },
       ]);
     }
+
     setLoading(false);
   }
 
@@ -241,7 +300,7 @@ export default function SinglePage() {
         <aside className="sp-left">
           {mode === "SIM" ? (
             <div className="panel">
-              <h3>Simulation Controls</h3>
+              <h3>1. Create Population</h3>
               <div
                 style={{
                   fontSize: 11,
@@ -250,8 +309,8 @@ export default function SinglePage() {
                   lineHeight: 1.4,
                 }}
               >
-                Create a virtual mouse population to simulate breeding
-                experiments and genetic analysis.
+                Start by creating a virtual mouse population with random genetic
+                diversity.
               </div>
 
               <label>Population Name</label>
@@ -291,15 +350,27 @@ export default function SinglePage() {
                 Create Population
               </button>
 
-              <button
-                onClick={handleAdvance}
-                disabled={!pop || loading}
-                title="Simulate natural selection and advance to the next generation"
-              >
-                Advance Generation
-              </button>
-              <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
-                Advances the population through selective breeding
+              <div style={{ marginTop: 16 }}>
+                <CollapsibleSection
+                  title="Advanced Options"
+                  description="Multi-generation simulation and batch operations"
+                  badge="ADVANCED"
+                  defaultOpen={false}
+                >
+                  <button
+                    onClick={handleAdvance}
+                    disabled={!pop || loading}
+                    title="Breed selected mice and replace population with offspring (next generation)"
+                    style={{ width: "100%" }}
+                  >
+                    Advance Generation
+                  </button>
+                  <div style={{ fontSize: 10, color: "#6b7280", marginTop: 6 }}>
+                    Breeds the entire population and advances to the next
+                    generation. This replaces all current mice with their
+                    offspring.
+                  </div>
+                </CollapsibleSection>
               </div>
               <div
                 style={{
@@ -308,58 +379,24 @@ export default function SinglePage() {
                   borderTop: "1px solid #e5e7eb",
                 }}
               >
-                <label style={{ display: "block", marginTop: 0 }}>
-                  WebSocket Connection
-                </label>
                 <div
                   style={{
                     fontSize: 10,
-                    color: "#6b7280",
-                    marginBottom: 8,
-                    lineHeight: 1.4,
+                    color: connected ? "#10b981" : "#6b7280",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
                   }}
                 >
-                  Real-time connection for live breeding updates
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    marginTop: 8,
-                    marginBottom: 8,
-                    padding: "6px 10px",
-                    background: connected ? "#f0fdf4" : "#fef2f2",
-                    border: `1px solid ${connected ? "#bbf7d0" : "#fecaca"}`,
-                    borderRadius: 4,
-                    color: connected ? "#166534" : "#991b1b",
-                  }}
-                >
-                  Status: {connected ? "Connected" : "Disconnected"}
-                </div>
-                <button onClick={() => setLive((v) => !v)}>
-                  {live ? "Disconnect" : "Connect"}
-                </button>
-                <button
-                  onClick={() => {
-                    if (!pop || !pop.mice_sample || pop.mice_sample.length < 2)
-                      return alert("Need at least 2 mice in population");
-                    const p1 = pop.mice_sample[0].id || pop.mice_sample[0];
-                    const p2 = pop.mice_sample[1].id || pop.mice_sample[1];
-                    send({
-                      type: "breed",
-                      data: {
-                        parent1_id: String(p1),
-                        parent2_id: String(p2),
-                        n_offspring: 2,
-                      },
-                    });
-                  }}
-                  disabled={!connected}
-                  title="Test real-time breeding via WebSocket"
-                >
-                  Test Live Breed
-                </button>
-                <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4 }}>
-                  Breeds first two mice in real-time
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      backgroundColor: connected ? "#10b981" : "#9ca3af",
+                    }}
+                  />
+                  Real-time updates {connected ? "active" : "connecting..."}
                 </div>
               </div>
             </div>
@@ -464,12 +501,55 @@ export default function SinglePage() {
                 title="Select which genetic trait to predict"
               >
                 <option value="">Select gene...</option>
-                {genes.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
+                <option
+                  value=""
+                  disabled
+                  style={{ fontSize: 11, color: "#6b7280" }}
+                >
+                  ──────────────────────────────
+                </option>
+                <option value="DEFAULT">
+                  DEFAULT - Unknown gene (generic model)
+                </option>
+                {genes
+                  .filter((g) => g !== "DEFAULT")
+                  .map((g) => {
+                    const details = geneDetails[g] || {};
+                    const name = details.name || g;
+                    const trait = details.trait || "unknown";
+                    const func = details.function || "";
+                    return (
+                      <option key={g} value={g} title={func}>
+                        {g} - {name} ({trait})
+                      </option>
+                    );
+                  })}
               </select>
+
+              {gene && geneDetails[gene] && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: "8px 10px",
+                    background: "#f0f9ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: "#1e40af",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                    {geneDetails[gene].name}
+                  </div>
+                  <div style={{ color: "#3b82f6" }}>
+                    {geneDetails[gene].function}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 10, color: "#6b7280" }}>
+                    Trait: {geneDetails[gene].trait} | Model:{" "}
+                    {geneDetails[gene].model?.type || "unknown"}
+                  </div>
+                </div>
+              )}
 
               <button
                 className="primary"
@@ -493,9 +573,20 @@ export default function SinglePage() {
             }}
           >
             <div style={{ flexShrink: 0 }}>
-              <h3 style={{ marginBottom: 4 }}>Dashboard</h3>
+              <h3 style={{ marginBottom: 4 }}>2. Your Population</h3>
               <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>
-                View and manage your mouse population
+                {pop ? (
+                  <>
+                    Select mice to breed and view offspring
+                    {pop.size > pop.mice_sample?.length && (
+                      <span style={{ color: "#f59e0b", marginLeft: 4 }}>
+                        (Showing {pop.mice_sample?.length} of {pop.size} mice)
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  "Create a population to start breeding"
+                )}
               </div>
             </div>
             <div style={{ flex: 1, overflow: "hidden" }}>
@@ -510,9 +601,10 @@ export default function SinglePage() {
 
         <aside className="sp-middle">
           <div className="panel">
-            <h3 style={{ marginBottom: 4 }}>Analysis Results</h3>
+            <h3 style={{ marginBottom: 4 }}>3. Genetic Analysis</h3>
             <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}>
-              Genetic relationship matrix and inbreeding coefficients
+              View genetic relationships, inbreeding coefficients, and
+              population statistics
             </div>
             <GeneticsPanel population={pop} />
           </div>
@@ -566,7 +658,9 @@ export default function SinglePage() {
                       >
                         {log.time}
                       </div>
-                      <div>{log.message}</div>
+                      <div style={{ whiteSpace: "pre-line" }}>
+                        {log.message}
+                      </div>
                     </div>
                   ))
               )}
@@ -722,6 +816,18 @@ export default function SinglePage() {
           ) : null}
         </aside>
       </div>
+
+      {showPartnerDialog && selectedMouseForBreeding && (
+        <PartnerSelectionDialog
+          mouse={selectedMouseForBreeding}
+          availableMice={pop?.mice_sample || []}
+          onBreed={handleBreedWithPartner}
+          onClose={() => {
+            setShowPartnerDialog(false);
+            setSelectedMouseForBreeding(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -96,9 +96,9 @@ export default function MouseCard({ mouse, onBreed }) {
             padding: "3px 6px",
             fontSize: 10,
           }}
-          title="Breed this mouse with another from the population"
+          title="Select a partner and breed this mouse"
         >
-          Breed
+          Select Partner
         </button>
         <button
           onClick={() => alert(JSON.stringify(mouse, null, 2))}

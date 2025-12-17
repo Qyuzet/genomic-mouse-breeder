@@ -48,13 +48,17 @@ export default function PopulationList({ population, onBreed, onRefresh }) {
             {population.name || "Population"}
           </div>
           <div style={{ fontSize: 10, color: "#6b7280" }}>
-            Gen {population.generation || 0} • {mice.length} mice
+            Gen {population.generation || 0} • {population.size || mice.length}{" "}
+            mice total
+            {population.size > mice.length && (
+              <span style={{ color: "#f59e0b" }}> (showing {mice.length})</span>
+            )}
           </div>
         </div>
         <button
           onClick={() => onRefresh && onRefresh(population.id)}
           style={{ margin: 0, padding: "4px 10px", fontSize: 11 }}
-          title="Reload population data from the server"
+          title="Reload population data to see all mice"
         >
           Refresh
         </button>

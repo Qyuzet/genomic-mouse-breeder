@@ -238,10 +238,12 @@ async def create_population(request: PopulationCreateRequest, db: Session = Depe
         )
         db.add(db_pop)
         db.commit()
-        
-        # Get sample mice
-        mice_sample = [genetics_service.mouse_to_dict(m) for m in pop.mice[:10]]
-        
+
+        # Get mice sample - return up to 100 mice for better UX
+        # For larger populations, frontend can request more via pagination
+        max_sample = min(len(pop.mice), 100)
+        mice_sample = [genetics_service.mouse_to_dict(m) for m in pop.mice[:max_sample]]
+
         return PopulationResponse(
             id=pop_id,
             name=request.name,
@@ -263,7 +265,12 @@ async def get_population(pop_id: str):
     if not pop:
         raise HTTPException(status_code=404, detail="Population not found")
 
-    mice_sample = [genetics_service.mouse_to_dict(m) for m in pop.mice[:10]]
+    # Sync mouse registry to ensure all mice are available for breeding
+    genetics_service.sync_population_mice(pop_id)
+
+    # Return up to 100 mice for better UX
+    max_sample = min(len(pop.mice), 100)
+    mice_sample = [genetics_service.mouse_to_dict(m) for m in pop.mice[:max_sample]]
 
     return PopulationResponse(
         id=pop_id,
@@ -326,6 +333,9 @@ async def advance_generation(pop_id: str):
 
     try:
         stats = pop.next_generation(strategy='fitness')
+
+        # Sync the mouse registry with new generation mice
+        genetics_service.sync_population_mice(pop_id)
 
         return {
             "generation": pop.generation,

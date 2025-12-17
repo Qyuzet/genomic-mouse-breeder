@@ -581,7 +581,7 @@ def make_child_real_geno(p1: Mouse, p2: Mouse) -> Dict[Tuple[str, int], int]:
 # BREEDING FUNCTION
 # ============================================================================
 
-def mate(parent1: Mouse, parent2: Mouse) -> List[Mouse]:
+def mate(parent1: Mouse, parent2: Mouse, n_offspring: int = None) -> List[Mouse]:
     """
     Breed two mice using Mendelian inheritance with recombination.
 
@@ -593,11 +593,12 @@ def mate(parent1: Mouse, parent2: Mouse) -> List[Mouse]:
     Args:
         parent1: First parent mouse
         parent2: Second parent mouse
+        n_offspring: Number of offspring to generate (default: random 4-6)
 
     Returns:
-        List of 4-6 offspring mice
+        List of offspring mice (4-6 if n_offspring not specified, otherwise n_offspring)
     """
-    litter_size = random.randint(4, 6)
+    litter_size = n_offspring if n_offspring is not None else random.randint(4, 6)
     offspring = []
 
     new_generation = max(parent1.generation, parent2.generation) + 1

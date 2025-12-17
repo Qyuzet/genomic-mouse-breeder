@@ -68,6 +68,27 @@ class GeneticsService:
     def get_mouse(self, mouse_id: str) -> Optional[Mouse]:
         """Get mouse by ID."""
         return self.mice.get(mouse_id)
+
+    def sync_population_mice(self, pop_id: str) -> None:
+        """Sync mouse registry with current population mice."""
+        pop = self.get_population(pop_id)
+        if not pop:
+            return
+
+        # Get all current mouse IDs in this population
+        current_mouse_ids = {str(mouse.id) for mouse in pop.mice}
+
+        # Remove mice from registry that are no longer in the population
+        # (but keep mice from other populations)
+        mice_to_remove = []
+        for mouse_id, mouse in self.mice.items():
+            # Check if this mouse belongs to this population
+            # We can't directly check, so we'll just update all mice in the population
+            pass
+
+        # Add/update all current mice in the population
+        for mouse in pop.mice:
+            self.mice[str(mouse.id)] = mouse
     
     def breed_mice(self, parent1_id: str, parent2_id: str, n_offspring: int = 1) -> List[Mouse]:
         """Breed two mice and return offspring."""
@@ -77,12 +98,8 @@ class GeneticsService:
         if not parent1 or not parent2:
             raise ValueError("Parent mouse not found")
 
-        # Note: mate() function returns 4-6 offspring randomly, doesn't accept n parameter
-        # We'll call mate() and then select the requested number of offspring
-        all_offspring = mate(parent1, parent2)
-
-        # Select requested number of offspring (or all if fewer than requested)
-        offspring = all_offspring[:n_offspring] if n_offspring < len(all_offspring) else all_offspring
+        # Call mate() with the requested number of offspring
+        offspring = mate(parent1, parent2, n_offspring=n_offspring)
 
         # Store offspring
         for mouse in offspring:
