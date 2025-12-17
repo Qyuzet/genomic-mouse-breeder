@@ -41,15 +41,39 @@ export default function SinglePage() {
   useEffect(() => {
     if (messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
+
+      let logMessage = `WebSocket: ${JSON.stringify(lastMsg).slice(0, 100)}`;
+
+      if (lastMsg.type === "breed_result" && lastMsg.status === "success") {
+        const count = lastMsg.data?.count || 0;
+        logMessage = `Live Breed Success: ${count} offspring created`;
+      } else if (
+        lastMsg.type === "breed_result" &&
+        lastMsg.status === "error"
+      ) {
+        logMessage = `Live Breed Error: ${lastMsg.message || "Unknown error"}`;
+      } else if (
+        lastMsg.type === "generation_advanced" &&
+        lastMsg.status === "success"
+      ) {
+        const gen = lastMsg.data?.generation || "?";
+        logMessage = `Generation advanced to ${gen}`;
+      }
+
       setActivityLog((prev) => [
         ...prev,
         {
           time: new Date().toLocaleTimeString(),
-          message: `WebSocket: ${JSON.stringify(lastMsg).slice(0, 100)}`,
+          message: logMessage,
         },
       ]);
 
-      if (lastMsg.type === "breed_complete" && pop && pop.id) {
+      if (
+        lastMsg.type === "breed_result" &&
+        lastMsg.status === "success" &&
+        pop &&
+        pop.id
+      ) {
         api
           .getPopulation(pop.id)
           .then(setPop)
