@@ -2747,7 +2747,7 @@ def validate_mendelian_ratios(n_trials: int = 1000) -> bool:
     return pass_test
 
 
-def validate_grm_relationships() -> bool:
+def validate_grm_relationships(population_size: int = 10) -> bool:
     """
     VALIDATION METHOD 2: GRM Relationship Accuracy
 
@@ -2764,7 +2764,7 @@ def validate_grm_relationships() -> bool:
         Mean Absolute Error (MAE) < 0.10 is acceptable
 
     Args:
-        None
+        population_size: Size of test population (default 10, larger = more robust)
 
     Returns:
         True if all relationships are within acceptable error, False otherwise
@@ -2778,6 +2778,7 @@ def validate_grm_relationships() -> bool:
     print("=" * 80)
     print()
     print("Testing: VanRaden (2008) GRM against known pedigree relationships")
+    print(f"Population size: {population_size}")
     print()
     print("Reference: VanRaden (2008), Wright (1922), Malécot (1948)")
     print("Accuracy metric: Mean Absolute Error (MAE) < 0.10")
@@ -2785,7 +2786,7 @@ def validate_grm_relationships() -> bool:
     print("-" * 80)
 
     # Create population with known pedigree
-    pop = Population(size=10, goal=GoalPresets.LARGE_FRIENDLY)
+    pop = Population(size=population_size, goal=GoalPresets.LARGE_FRIENDLY)
 
     # Get two unrelated founders
     founder1 = pop.mice[0]
@@ -2875,7 +2876,7 @@ def validate_grm_relationships() -> bool:
     return pass_test
 
 
-def validate_inbreeding_correlation() -> bool:
+def validate_inbreeding_correlation(population_size: int = 20, n_generations: int = 5) -> bool:
     """
     VALIDATION METHOD 3: Inbreeding Coefficient Correlation
 
@@ -2894,7 +2895,8 @@ def validate_inbreeding_correlation() -> bool:
         - Mendelian sampling variance (randomness in inheritance)
 
     Args:
-        None
+        population_size: Size of test population (default 20, larger = more robust)
+        n_generations: Number of generations to run (default 5, more = higher F)
 
     Returns:
         True if correlation > 0.85, False otherwise
@@ -2908,19 +2910,20 @@ def validate_inbreeding_correlation() -> bool:
     print("=" * 80)
     print()
     print("Testing: Correlation between F_pedigree and F_genomic")
+    print(f"Population size: {population_size}, Generations: {n_generations}")
     print()
     print("Reference: Pryce et al. (2012), McQuillan et al. (2008)")
     print("Expected: r > 0.85 (good agreement)")
     print()
     print("-" * 80)
 
-    # Run 5 generations with inbreeding to accumulate F
-    print("Running 5-generation simulation to accumulate inbreeding...")
+    # Run generations with inbreeding to accumulate F
+    print(f"Running {n_generations}-generation simulation to accumulate inbreeding...")
     print()
 
-    pop = Population(size=20, goal=GoalPresets.LARGE_FRIENDLY)
+    pop = Population(size=population_size, goal=GoalPresets.LARGE_FRIENDLY)
 
-    for gen in range(5):
+    for gen in range(n_generations):
         pop.next_generation(strategy='fitness', cull_rate=0.0)
 
     print(f"Generation {pop.generation} reached")
@@ -2989,7 +2992,7 @@ def validate_inbreeding_correlation() -> bool:
     return pass_test
 
 
-def validate_heritability() -> bool:
+def validate_heritability(population_size: int = 100) -> bool:
     """
     VALIDATION METHOD 4: Realized Heritability Estimation
 
@@ -3007,7 +3010,7 @@ def validate_heritability() -> bool:
         |h^2_realized - h^2_target| < 0.15 (15% error)
 
     Args:
-        None
+        population_size: Size of test population (default 100, larger = more accurate)
 
     Returns:
         True if heritability is within acceptable range, False otherwise
@@ -3021,6 +3024,7 @@ def validate_heritability() -> bool:
     print("=" * 80)
     print()
     print("Testing: Realized h^2 vs. Target h^2 = 0.4")
+    print(f"Population size: {population_size}")
     print()
     print("Reference: Falconer & Mackay (1996), Lynch & Walsh (1998)")
     print("Method: Breeder's equation (R = h^2 x S)")
@@ -3029,8 +3033,8 @@ def validate_heritability() -> bool:
     print("-" * 80)
 
     # Create large population for better estimates
-    print("Creating founder population (n=100)...")
-    pop = Population(size=100, goal=GoalPresets.LARGE_FRIENDLY)
+    print(f"Creating founder population (n={population_size})...")
+    pop = Population(size=population_size, goal=GoalPresets.LARGE_FRIENDLY)
     pop._generate_polytraits()
 
     # Population mean

@@ -126,6 +126,11 @@ class HeritabilityResponse(BaseModel):
 # VALIDATION SCHEMAS
 # ============================================================================
 
+class ValidationRequest(BaseModel):
+    n_trials: int = 1000
+    population_size: int = 100
+    n_generations: int = 5
+
 class ValidationMethodResponse(BaseModel):
     method_name: str
     passed: bool

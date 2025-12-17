@@ -52,6 +52,21 @@ export const realCross = (payload) =>
 export const exportPopulation = (id, format = "json") =>
   request(`/api/export/population/${id}?format=${format}`, { method: "POST" });
 export const getMouse = (id) => request(`/api/mouse/${id}`);
+export const validateAll = (params = {}) =>
+  request("/api/validate/all", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+export const validateMendelian = () =>
+  request("/api/validate/mendelian", { method: "POST" });
+export const validateGRM = () =>
+  request("/api/validate/grm", { method: "POST" });
+export const validateInbreeding = () =>
+  request("/api/validate/inbreeding", { method: "POST" });
+export const validateHeritability = () =>
+  request("/api/validate/heritability", { method: "POST" });
+export const validateRealMode = () =>
+  request("/api/validate/real-mode", { method: "POST" });
 
 export default {
   getStrains,
@@ -67,4 +82,10 @@ export default {
   realCross,
   exportPopulation,
   getMouse,
+  validateAll,
+  validateMendelian,
+  validateGRM,
+  validateInbreeding,
+  validateHeritability,
+  validateRealMode,
 };

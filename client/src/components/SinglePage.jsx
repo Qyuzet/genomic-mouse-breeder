@@ -11,6 +11,7 @@ import "./singlepage.css";
 export default function SinglePage() {
   const [activeTab, setActiveTab] = useState("simulation");
   const [mode, setMode] = useState("SIM");
+  const [docSection, setDocSection] = useState("overview");
 
   // SIM state
   const [popName, setPopName] = useState("Experiment 1");
@@ -25,6 +26,17 @@ export default function SinglePage() {
   const [strainB, setStrainB] = useState("");
   const [gene, setGene] = useState("");
   const [predictResult, setPredictResult] = useState(null);
+  const [breedResult, setBreedResult] = useState(null);
+
+  // Validation state
+  const [validationResults, setValidationResults] = useState(null);
+  const [validationLoading, setValidationLoading] = useState(false);
+  const [validationError, setValidationError] = useState(null);
+  const [validationParams, setValidationParams] = useState({
+    n_trials: 1000,
+    population_size: 100,
+    n_generations: 5,
+  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -232,6 +244,16 @@ export default function SinglePage() {
         },
       ]);
 
+      // Store breeding results for display
+      setBreedResult({
+        parent1: `Mouse #${String(mouse.id).slice(0, 6)}`,
+        parent2: `Mouse #${String(partner.id).slice(0, 6)}`,
+        offspring_count: count,
+        genotype_counts: res.genotype_counts || {},
+        phenotype_summary: res.phenotype_summary || {},
+        cross_diagram: res.cross_diagram || "",
+      });
+
       // Auto-refresh population
       try {
         const refreshed = await api.getPopulation(pop.id);
@@ -276,6 +298,39 @@ export default function SinglePage() {
     setLoading(false);
   }
 
+  async function handleRunValidation() {
+    setValidationLoading(true);
+    setValidationError(null);
+    setValidationResults(null);
+
+    console.log("Running validation with parameters:", validationParams);
+
+    try {
+      const res = await api.validateAll(validationParams);
+      setValidationResults(res);
+
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Validation completed: ${res.pass_count}/${res.total_count} tests passed (n_trials=${validationParams.n_trials}, pop_size=${validationParams.population_size})`,
+        },
+      ]);
+    } catch (e) {
+      setValidationError(e.message || "Validation failed");
+      setActivityLog((prev) => [
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString(),
+          message: `Validation failed: ${e.message}`,
+          error: true,
+        },
+      ]);
+    }
+
+    setValidationLoading(false);
+  }
+
   return (
     <div className="sp-root">
       <header className="sp-topbar">
@@ -292,6 +347,18 @@ export default function SinglePage() {
             className={mode === "REAL" ? "active" : ""}
           >
             Real Data
+          </button>
+          <button
+            onClick={() => setMode("VALIDATION")}
+            className={mode === "VALIDATION" ? "active" : ""}
+          >
+            Validation
+          </button>
+          <button
+            onClick={() => setMode("DOCUMENTATION")}
+            className={mode === "DOCUMENTATION" ? "active" : ""}
+          >
+            Documentation
           </button>
         </div>
       </header>
@@ -400,7 +467,7 @@ export default function SinglePage() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : mode === "REAL" ? (
             <div className="panel">
               <h3>Real Data Controls</h3>
               <div
@@ -560,55 +627,1420 @@ export default function SinglePage() {
                 Predict Cross
               </button>
             </div>
-          )}
-        </aside>
+          ) : mode === "VALIDATION" ? (
+            <div className="panel">
+              <h3>Accuracy Validation</h3>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#6b7280",
+                  marginBottom: 16,
+                  lineHeight: 1.4,
+                }}
+              >
+                Run scientific validation tests to verify the accuracy of the
+                genetics simulation
+              </div>
 
-        <main className="sp-main">
-          <div
-            className="panel"
-            style={{
-              height: "calc(100vh - 80px)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div style={{ flexShrink: 0 }}>
-              <h3 style={{ marginBottom: 4 }}>2. Your Population</h3>
-              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}>
-                {pop ? (
-                  <>
-                    Select mice to breed and view offspring
-                    {pop.size > pop.mice_sample?.length && (
-                      <span style={{ color: "#f59e0b", marginLeft: 4 }}>
-                        (Showing {pop.mice_sample?.length} of {pop.size} mice)
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  "Create a population to start breeding"
-                )}
+              <div style={{ marginBottom: 16 }}>
+                <label>
+                  Number of Trials (Mendelian Test)
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "#9ca3af",
+                      fontWeight: 400,
+                      marginLeft: 6,
+                    }}
+                  >
+                    (Higher = more accurate, slower)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  min="100"
+                  max="10000"
+                  step="100"
+                  value={validationParams.n_trials}
+                  onChange={(e) =>
+                    setValidationParams({
+                      ...validationParams,
+                      n_trials: parseInt(e.target.value) || 1000,
+                    })
+                  }
+                  title="Number of breeding trials for Mendelian ratio test"
+                />
+                <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 2 }}>
+                  Default: 1000 (recommended 500-2000)
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label>
+                  Population Size
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "#9ca3af",
+                      fontWeight: 400,
+                      marginLeft: 6,
+                    }}
+                  >
+                    (Larger = more robust)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  max="500"
+                  step="10"
+                  value={validationParams.population_size}
+                  onChange={(e) =>
+                    setValidationParams({
+                      ...validationParams,
+                      population_size: parseInt(e.target.value) || 100,
+                    })
+                  }
+                  title="Population size for GRM and heritability tests"
+                />
+                <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 2 }}>
+                  Default: 100 (recommended 50-200)
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label>
+                  Number of Generations
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: "#9ca3af",
+                      fontWeight: 400,
+                      marginLeft: 6,
+                    }}
+                  >
+                    (Inbreeding test)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  min="3"
+                  max="10"
+                  step="1"
+                  value={validationParams.n_generations}
+                  onChange={(e) =>
+                    setValidationParams({
+                      ...validationParams,
+                      n_generations: parseInt(e.target.value) || 5,
+                    })
+                  }
+                  title="Number of generations for inbreeding correlation test"
+                />
+                <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 2 }}>
+                  Default: 5 (recommended 3-7)
+                </div>
+              </div>
+
+              <button
+                className="primary"
+                onClick={handleRunValidation}
+                disabled={validationLoading}
+                style={{ marginBottom: 16 }}
+              >
+                {validationLoading
+                  ? "Running Tests..."
+                  : "Run All Validation Tests"}
+              </button>
+
+              {validationError && (
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    background: "#fef2f2",
+                    border: "1px solid #fecaca",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: "#dc2626",
+                    marginBottom: 12,
+                  }}
+                >
+                  {validationError}
+                </div>
+              )}
+
+              {validationResults && (
+                <div>
+                  <div
+                    style={{
+                      padding: "12px",
+                      background: validationResults.overall_pass
+                        ? "#f0fdf4"
+                        : "#fef2f2",
+                      border: `1px solid ${
+                        validationResults.overall_pass ? "#bbf7d0" : "#fecaca"
+                      }`,
+                      borderRadius: 6,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}
+                    >
+                      Overall Result:{" "}
+                      {validationResults.overall_pass ? "PASS" : "FAIL"}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#6b7280" }}>
+                      {validationResults.pass_count} of{" "}
+                      {validationResults.total_count} tests passed
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 12, color: "#374151" }}>
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Test Results:
+                    </div>
+                    {validationResults.detailed_results?.map((result, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: "8px 10px",
+                          background: "#f9fafb",
+                          borderLeft: `3px solid ${
+                            result.passed ? "#10b981" : "#ef4444"
+                          }`,
+                          marginBottom: 8,
+                          borderRadius: 4,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div style={{ fontSize: 11, fontWeight: 500 }}>
+                            {result.method_name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              color: result.passed ? "#10b981" : "#ef4444",
+                            }}
+                          >
+                            {result.passed ? "PASS" : "FAIL"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div
+                style={{
+                  marginTop: 24,
+                  fontSize: 10,
+                  color: "#9ca3af",
+                  lineHeight: 1.6,
+                }}
+              >
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                  Validation Methods:
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  1. <strong>Mendelian Ratios</strong> - Chi-square test for
+                  inheritance patterns
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  2. <strong>GRM Relationships</strong> - Genomic relationship
+                  matrix accuracy
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  3. <strong>Inbreeding Correlation</strong> - Pedigree vs
+                  genomic inbreeding
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  4. <strong>Heritability</strong> - Realized heritability
+                  estimation
+                </div>
+                <div style={{ marginBottom: 6 }}>
+                  5. <strong>Real Mode Predictions</strong> - Accuracy of real
+                  data predictions
+                </div>
               </div>
             </div>
-            <div style={{ flex: 1, overflow: "hidden" }}>
-              <PopulationList
-                population={pop}
-                onBreed={handleBreedAction}
-                onRefresh={handleRefresh}
-              />
+          ) : mode === "DOCUMENTATION" ? (
+            <div
+              className="panel"
+              style={{ border: "1px solid #000", background: "#fff" }}
+            >
+              <h3
+                style={{
+                  borderBottom: "1px solid #000",
+                  paddingBottom: 8,
+                  marginBottom: 16,
+                }}
+              >
+                Documentation
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                  onClick={() => setDocSection("overview")}
+                  style={{
+                    padding: "8px 12px",
+                    border:
+                      docSection === "overview"
+                        ? "2px solid #000"
+                        : "1px solid #000",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontWeight: docSection === "overview" ? 600 : 400,
+                  }}
+                >
+                  Overview
+                </button>
+                <button
+                  onClick={() => setDocSection("classes")}
+                  style={{
+                    padding: "8px 12px",
+                    border:
+                      docSection === "classes"
+                        ? "2px solid #000"
+                        : "1px solid #000",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontWeight: docSection === "classes" ? 600 : 400,
+                  }}
+                >
+                  Code Structure
+                </button>
+                <button
+                  onClick={() => setDocSection("mathematics")}
+                  style={{
+                    padding: "8px 12px",
+                    border:
+                      docSection === "mathematics"
+                        ? "2px solid #000"
+                        : "1px solid #000",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontWeight: docSection === "mathematics" ? 600 : 400,
+                  }}
+                >
+                  Mathematical Equations
+                </button>
+                <button
+                  onClick={() => setDocSection("validation")}
+                  style={{
+                    padding: "8px 12px",
+                    border:
+                      docSection === "validation"
+                        ? "2px solid #000"
+                        : "1px solid #000",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontWeight: docSection === "validation" ? 600 : 400,
+                  }}
+                >
+                  Validation Methods
+                </button>
+                <button
+                  onClick={() => setDocSection("references")}
+                  style={{
+                    padding: "8px 12px",
+                    border:
+                      docSection === "references"
+                        ? "2px solid #000"
+                        : "1px solid #000",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontWeight: docSection === "references" ? 600 : 400,
+                  }}
+                >
+                  References
+                </button>
+              </div>
             </div>
-          </div>
-        </main>
-
-        <aside className="sp-middle">
-          <div className="panel">
-            <h3 style={{ marginBottom: 4 }}>3. Genetic Analysis</h3>
-            <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}>
-              View genetic relationships, inbreeding coefficients, and
-              population statistics
-            </div>
-            <GeneticsPanel population={pop} />
-          </div>
+          ) : null}
         </aside>
+
+        {mode !== "VALIDATION" && mode !== "DOCUMENTATION" ? (
+          <>
+            <main className="sp-main">
+              <div
+                className="panel"
+                style={{
+                  height: "calc(100vh - 80px)",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div style={{ flexShrink: 0 }}>
+                  <h3 style={{ marginBottom: 4 }}>2. Your Population</h3>
+                  <div
+                    style={{ fontSize: 10, color: "#6b7280", marginBottom: 8 }}
+                  >
+                    {pop ? (
+                      <>
+                        Select mice to breed and view offspring
+                        {pop.size > pop.mice_sample?.length && (
+                          <span style={{ color: "#f59e0b", marginLeft: 4 }}>
+                            (Showing {pop.mice_sample?.length} of {pop.size}{" "}
+                            mice)
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      "Create a population to start breeding"
+                    )}
+                  </div>
+                </div>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <PopulationList
+                    population={pop}
+                    onBreed={handleBreedAction}
+                    onRefresh={handleRefresh}
+                  />
+                </div>
+              </div>
+            </main>
+
+            <aside className="sp-middle">
+              <div className="panel">
+                <h3 style={{ marginBottom: 4 }}>3. Genetic Analysis</h3>
+                <div
+                  style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}
+                >
+                  View genetic relationships, inbreeding coefficients, and
+                  population statistics
+                </div>
+                <GeneticsPanel population={pop} />
+              </div>
+            </aside>
+          </>
+        ) : null}
+
+        {mode === "VALIDATION" && (
+          <main className="sp-main" style={{ gridColumn: "2 / 4" }}>
+            <div className="panel" style={{ height: "calc(100vh - 80px)" }}>
+              <h3 style={{ marginBottom: 4 }}>Validation Details</h3>
+              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 16 }}>
+                Scientific validation ensures the simulator follows established
+                genetics principles
+              </div>
+
+              {!validationResults && !validationLoading && (
+                <div
+                  style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.8 }}
+                >
+                  <p style={{ marginBottom: 12 }}>
+                    Click "Run All Validation Tests" to verify the accuracy of
+                    the genetics simulation.
+                  </p>
+                  <p style={{ marginBottom: 12 }}>
+                    The validation suite runs 5 comprehensive tests based on
+                    established scientific methods:
+                  </p>
+                  <div style={{ marginLeft: 16, marginBottom: 16 }}>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>1. Mendelian Ratios (Chi-Square Test)</strong>
+                      <div
+                        style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}
+                      >
+                        Tests if breeding follows Mendel's laws (1866). Expected
+                        1:2:1 ratio for heterozygous crosses.
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>2. GRM Relationship Accuracy</strong>
+                      <div
+                        style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}
+                      >
+                        Validates genomic relationship matrix using VanRaden
+                        (2008) method. Tests parent-offspring and sibling
+                        relationships.
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>3. Inbreeding Coefficient Correlation</strong>
+                      <div
+                        style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}
+                      >
+                        Compares pedigree-based (Wright 1922) vs genomic
+                        inbreeding. Expected correlation &gt; 0.85.
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>4. Realized Heritability</strong>
+                      <div
+                        style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}
+                      >
+                        Tests heritability estimation using Falconer & Mackay
+                        (1996) method. Validates quantitative genetics.
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <strong>5. Real Mode Prediction Accuracy</strong>
+                      <div
+                        style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}
+                      >
+                        Validates predictions against Mouse Genome Database
+                        (MGD) data. Tests real genomic data integration.
+                      </div>
+                    </div>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 10,
+                      color: "#9ca3af",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Note: Validation tests may take 30-60 seconds to complete as
+                    they run thousands of simulations.
+                  </p>
+                </div>
+              )}
+
+              {validationLoading && (
+                <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <div
+                    style={{ fontSize: 14, color: "#3b82f6", marginBottom: 8 }}
+                  >
+                    Running validation tests...
+                  </div>
+                  <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                    This may take 30-60 seconds
+                  </div>
+                </div>
+              )}
+
+              {validationResults && (
+                <div style={{ fontSize: 12, color: "#374151" }}>
+                  <div
+                    style={{
+                      padding: "16px",
+                      background: validationResults.overall_pass
+                        ? "#f0fdf4"
+                        : "#fef2f2",
+                      border: `2px solid ${
+                        validationResults.overall_pass ? "#10b981" : "#ef4444"
+                      }`,
+                      borderRadius: 8,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}
+                    >
+                      {validationResults.overall_pass
+                        ? "✓ VALIDATION PASSED"
+                        : "✗ VALIDATION FAILED"}
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      {validationResults.pass_count} of{" "}
+                      {validationResults.total_count} tests passed (
+                      {Math.round(
+                        (validationResults.pass_count /
+                          validationResults.total_count) *
+                          100
+                      )}
+                      %)
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        marginBottom: 12,
+                      }}
+                    >
+                      Detailed Results:
+                    </div>
+                    {validationResults.detailed_results?.map((result, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: "12px 14px",
+                          background: "#ffffff",
+                          border: `2px solid ${
+                            result.passed ? "#10b981" : "#ef4444"
+                          }`,
+                          borderRadius: 6,
+                          marginBottom: 12,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 4,
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>
+                            {result.method_name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              padding: "4px 12px",
+                              borderRadius: 4,
+                              background: result.passed ? "#10b981" : "#ef4444",
+                              color: "white",
+                            }}
+                          >
+                            {result.passed ? "PASS" : "FAIL"}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 10, color: "#6b7280" }}>
+                          Timestamp:{" "}
+                          {new Date(result.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+        )}
+
+        {mode === "DOCUMENTATION" && (
+          <main className="sp-main" style={{ gridColumn: "2 / 4" }}>
+            <div
+              className="panel"
+              style={{
+                height: "calc(100vh - 80px)",
+                overflow: "auto",
+                border: "1px solid #000",
+                background: "#fff",
+              }}
+            >
+              {docSection === "overview" && (
+                <div style={{ padding: 20, lineHeight: 1.6 }}>
+                  <h2
+                    style={{
+                      borderBottom: "2px solid #000",
+                      paddingBottom: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Mouse Breeding Simulator - Overview
+                  </h2>
+                  <p style={{ marginBottom: 12 }}>
+                    A comprehensive genetics simulation system implementing
+                    Mendelian inheritance, quantitative genetics, and genomic
+                    prediction methods used in modern animal breeding.
+                  </p>
+                  <h3
+                    style={{
+                      borderBottom: "1px solid #000",
+                      paddingBottom: 4,
+                      marginTop: 20,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Core Features
+                  </h3>
+                  <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+                    <li>Genome-wide SNPs (200 biallelic markers)</li>
+                    <li>
+                      Recombination via Poisson crossovers on 2 chromosomes
+                    </li>
+                    <li>Wright's pedigree inbreeding coefficient (F)</li>
+                    <li>VanRaden genomic relationship matrix (GRM)</li>
+                    <li>Quantitative trait via linear mixed model (LMM)</li>
+                    <li>Per-locus mutation model</li>
+                    <li>
+                      Real mouse strain data integration (Mouse Phenome
+                      Database)
+                    </li>
+                  </ul>
+                  <h3
+                    style={{
+                      borderBottom: "1px solid #000",
+                      paddingBottom: 4,
+                      marginTop: 20,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Simulation Modes
+                  </h3>
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>SIM Mode (Simulated Genetics):</strong> Uses
+                    simulated genomes with random SNP markers and Mendelian
+                    inheritance patterns.
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>REAL Mode (Real Genomic Data):</strong> Uses actual
+                    mouse strain genotypes from the Mouse Phenome Database for
+                    prediction.
+                  </div>
+                </div>
+              )}
+
+              {docSection === "classes" && (
+                <div style={{ padding: 20, lineHeight: 1.6 }}>
+                  <h2
+                    style={{
+                      borderBottom: "2px solid #000",
+                      paddingBottom: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Code Structure
+                  </h2>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>Class: Genome</h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Stores genetic information including visible traits and
+                      genome-wide SNPs.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 12,
+                        background: "#f9f9f9",
+                        padding: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    >
+                      <div>
+                        - snps: List[int] (200 SNP genotypes, 0/1/2 encoding)
+                      </div>
+                      <div>
+                        - visible_traits: Dict (coat_color, size, temperament)
+                      </div>
+                      <div>- get_snp_genotypes() → List[int]</div>
+                      <div>- get_allele_frequencies() → List[float]</div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>Class: Mouse</h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Represents an individual mouse with genome, phenotype,
+                      lineage, and quantitative trait.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 12,
+                        background: "#f9f9f9",
+                        padding: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    >
+                      <div>- id: int (unique identifier)</div>
+                      <div>- genome: Genome (genetic information)</div>
+                      <div>- phenotype: Dict (observable traits)</div>
+                      <div>- parents: Tuple[int, int] (dam_id, sire_id)</div>
+                      <div>- generation: int (generation number)</div>
+                      <div>- polytrait: float (quantitative trait value)</div>
+                      <div>- mate(partner, n_offspring) → List[Mouse]</div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>Class: Population</h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Manages a population of mice with breeding, selection, and
+                      statistics tracking.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 12,
+                        background: "#f9f9f9",
+                        padding: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    >
+                      <div>- mice: List[Mouse] (all individuals)</div>
+                      <div>- mouse_registry: Dict[int, Mouse] (ID lookup)</div>
+                      <div>- goal: Dict (breeding objectives)</div>
+                      <div>- compute_grm() → List[List[float]]</div>
+                      <div>
+                        - compute_genomic_inbreeding() → Dict[int, float]
+                      </div>
+                      <div>- next_generation(strategy, cull_rate)</div>
+                      <div>- get_statistics() → Dict</div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>Class: Dataset</h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Lightweight loader for real mouse strain data from Mouse
+                      Phenome Database.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 12,
+                        background: "#f9f9f9",
+                        padding: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    >
+                      <div>- strains: Dict[str, Dict] (strain genotypes)</div>
+                      <div>- loci: Dict[str, RealLocus] (gene definitions)</div>
+                      <div>- get_genotype(strain, locus) → int</div>
+                      <div>- predict_cross(strain1, strain2, locus) → Dict</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {docSection === "mathematics" && (
+                <div style={{ padding: 20, lineHeight: 1.8 }}>
+                  <h2
+                    style={{
+                      borderBottom: "2px solid #000",
+                      paddingBottom: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Mathematical Equations
+                  </h2>
+
+                  <div
+                    style={{
+                      marginBottom: 32,
+                      border: "1px solid #000",
+                      padding: 16,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 12 }}>
+                      1. Genomic Relationship Matrix (GRM)
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      VanRaden (2008) method for computing genomic relationships
+                      from SNP marker data.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      G = (1 / Σ 2p<sub>j</sub>(1-p<sub>j</sub>)) × (M - 2P)(M -
+                      2P)<sup>T</sup>
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>M</strong>: n×m matrix of SNP genotypes (0/1/2
+                        encoding)
+                      </div>
+                      <div>
+                        <strong>P</strong>: n×m matrix where each element is 2p
+                        <sub>j</sub>
+                      </div>
+                      <div>
+                        <strong>
+                          p<sub>j</sub>
+                        </strong>
+                        : allele frequency at SNP j
+                      </div>
+                      <div>
+                        <strong>G[i][j]</strong>: genomic relationship between
+                        individuals i and j
+                      </div>
+                      <div>
+                        <strong>G[i][i]</strong>: 1 + F<sub>i</sub> (diagonal
+                        relates to inbreeding)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 32,
+                      border: "1px solid #000",
+                      padding: 16,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 12 }}>
+                      2. Pedigree Inbreeding Coefficient
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Wright's coefficient measuring probability of identity by
+                      descent.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      F<sub>X</sub> = φ(dam, sire)
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>
+                          F<sub>X</sub>
+                        </strong>
+                        : inbreeding coefficient of individual X
+                      </div>
+                      <div>
+                        <strong>φ(dam, sire)</strong>: kinship coefficient
+                        between parents
+                      </div>
+                      <div>
+                        <strong>φ(i,j)</strong>: probability that alleles are
+                        identical by descent
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 32,
+                      border: "1px solid #000",
+                      padding: 16,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 12 }}>3. Genomic Inbreeding</h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Inbreeding coefficient derived from GRM diagonal elements.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      F<sub>genomic</sub> = G<sub>ii</sub> - 1
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>
+                          G<sub>ii</sub>
+                        </strong>
+                        : diagonal element of GRM for individual i
+                      </div>
+                      <div>
+                        <strong>
+                          F<sub>genomic</sub>
+                        </strong>
+                        : genomic inbreeding coefficient
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 32,
+                      border: "1px solid #000",
+                      padding: 16,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 12 }}>
+                      4. Linear Mixed Model (LMM)
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Quantitative trait model with fixed and random genetic
+                      effects.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      y = Xb + Za + e
+                    </div>
+                    <div style={{ fontSize: 13, marginBottom: 12 }}>
+                      <div>
+                        <strong>y</strong>: n×1 vector of phenotypic
+                        observations
+                      </div>
+                      <div>
+                        <strong>X</strong>: n×p design matrix for fixed effects
+                      </div>
+                      <div>
+                        <strong>b</strong>: p×1 vector of fixed effect
+                        coefficients
+                      </div>
+                      <div>
+                        <strong>Z</strong>: n×q incidence matrix
+                      </div>
+                      <div>
+                        <strong>a</strong>: q×1 vector of random genetic
+                        effects, a ~ N(0, Gσ<sup>2</sup>
+                        <sub>a</sub>)
+                      </div>
+                      <div>
+                        <strong>e</strong>: n×1 vector of residual errors, e ~
+                        N(0, Iσ<sup>2</sup>
+                        <sub>e</sub>)
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                      }}
+                    >
+                      h<sup>2</sup> = σ<sup>2</sup>
+                      <sub>a</sub> / (σ<sup>2</sup>
+                      <sub>a</sub> + σ<sup>2</sup>
+                      <sub>e</sub>)
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 32,
+                      border: "1px solid #000",
+                      padding: 16,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 12 }}>5. Chi-Square Test</h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Goodness-of-fit test for Mendelian ratios (Pearson 1900).
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      χ<sup>2</sup> = Σ[(O<sub>i</sub> - E<sub>i</sub>)
+                      <sup>2</sup> / E<sub>i</sub>]
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>
+                          O<sub>i</sub>
+                        </strong>
+                        : observed count for genotype i
+                      </div>
+                      <div>
+                        <strong>
+                          E<sub>i</sub>
+                        </strong>
+                        : expected count for genotype i
+                      </div>
+                      <div>
+                        <strong>Critical value</strong>: 5.991 (α=0.05, df=2)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 32,
+                      border: "1px solid #000",
+                      padding: 16,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 12 }}>
+                      6. Heritability Estimation
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Parent-offspring regression method (Falconer & Mackay
+                      1996).
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      R = h<sup>2</sup> × S
+                    </div>
+                    <div style={{ fontSize: 13, marginBottom: 12 }}>
+                      <div>
+                        <strong>R</strong>: response to selection
+                      </div>
+                      <div>
+                        <strong>S</strong>: selection differential
+                      </div>
+                      <div>
+                        <strong>
+                          h<sup>2</sup>
+                        </strong>
+                        : narrow-sense heritability
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#f9f9f9",
+                        padding: 12,
+                        border: "1px solid #000",
+                      }}
+                    >
+                      Slope(offspring ~ mid-parent) = h<sup>2</sup>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {docSection === "validation" && (
+                <div style={{ padding: 20, lineHeight: 1.6 }}>
+                  <h2
+                    style={{
+                      borderBottom: "2px solid #000",
+                      paddingBottom: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Validation Methods
+                  </h2>
+                  <p style={{ marginBottom: 16 }}>
+                    Five comprehensive validation methods verify the scientific
+                    accuracy of the simulation.
+                  </p>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>
+                      Method 1: Mendelian Ratios (Chi-Square Test)
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Tests if breeding follows Mendel's laws by comparing
+                      observed vs expected genotype ratios.
+                    </p>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>Test:</strong> Aa × Aa cross should produce
+                        1:2:1 ratio (AA:Aa:aa)
+                      </div>
+                      <div>
+                        <strong>Method:</strong> Chi-square goodness-of-fit test
+                      </div>
+                      <div>
+                        <strong>Pass Criteria:</strong> χ<sup>2</sup> &lt; 5.991
+                        (p &gt; 0.05)
+                      </div>
+                      <div>
+                        <strong>Reference:</strong> Mendel (1866), Pearson
+                        (1900)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>
+                      Method 2: GRM Relationship Accuracy
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Validates genomic relationship calculations against known
+                      pedigree relationships.
+                    </p>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>Test 1:</strong> Unrelated founders should have
+                        G ≈ 0
+                      </div>
+                      <div>
+                        <strong>Test 2:</strong> Parent-offspring should have G
+                        ≈ 0.5
+                      </div>
+                      <div>
+                        <strong>Test 3:</strong> Full siblings should have G ≈
+                        0.5
+                      </div>
+                      <div>
+                        <strong>Pass Criteria:</strong> All errors &lt; 0.2
+                      </div>
+                      <div>
+                        <strong>Reference:</strong> VanRaden (2008), Wright
+                        (1922)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>
+                      Method 3: Inbreeding Coefficient Correlation
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Compares pedigree-based and genomic inbreeding
+                      coefficients.
+                    </p>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>Test:</strong> Correlation between F_pedigree
+                        and F_genomic
+                      </div>
+                      <div>
+                        <strong>Pass Criteria:</strong> Pearson r &gt; 0.7
+                      </div>
+                      <div>
+                        <strong>Reference:</strong> Pryce et al. (2012)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>
+                      Method 4: Realized Heritability
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Tests if realized h<sup>2</sup> matches target h
+                      <sup>2</sup> = 0.4.
+                    </p>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>Test:</strong> Parent-offspring regression slope
+                      </div>
+                      <div>
+                        <strong>Pass Criteria:</strong> |h<sup>2</sup>_realized
+                        - 0.4| &lt; 0.15
+                      </div>
+                      <div>
+                        <strong>Reference:</strong> Falconer & Mackay (1996)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8 }}>
+                      Method 5: Real Mode Prediction Accuracy
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                      Validates predictions against Mouse Genome Database.
+                    </p>
+                    <div style={{ fontSize: 13 }}>
+                      <div>
+                        <strong>Test:</strong> Known crosses with documented
+                        outcomes
+                      </div>
+                      <div>
+                        <strong>Pass Criteria:</strong> Accuracy &gt; 80%
+                      </div>
+                      <div>
+                        <strong>Reference:</strong> Mouse Genome Informatics
+                        (MGI)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {docSection === "references" && (
+                <div style={{ padding: 20, lineHeight: 1.8 }}>
+                  <h2
+                    style={{
+                      borderBottom: "2px solid #000",
+                      paddingBottom: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    References
+                  </h2>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>Falconer, D.S. & Mackay, T.F.C. (1996).</strong>{" "}
+                    Introduction to Quantitative Genetics. 4th Edition. Longman,
+                    Harlow, Essex, UK.
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>Mendel, G. (1866).</strong> Versuche über
+                    Pflanzen-Hybriden. Verhandlungen des naturforschenden
+                    Vereines in Brünn, 4, 3-47.
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>Pearson, K. (1900).</strong> On the criterion that a
+                    given system of deviations from the probable in the case of
+                    a correlated system of variables is such that it can be
+                    reasonably supposed to have arisen from random sampling.
+                    Philosophical Magazine Series 5, 50(302), 157-175.
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>
+                      Pryce, J.E., Haile-Mariam, M., Goddard, M.E. & Hayes, B.J.
+                      (2014).
+                    </strong>{" "}
+                    Identification of genomic regions associated with inbreeding
+                    depression in Holstein and Jersey dairy cattle. Genetics
+                    Selection Evolution, 46, 71.
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>VanRaden, P.M. (2008).</strong> Efficient methods to
+                    compute genomic predictions. Journal of Dairy Science,
+                    91(11), 4414-4423.
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>Wright, S. (1922).</strong> Coefficients of
+                    inbreeding and relationship. The American Naturalist,
+                    56(645), 330-338.
+                  </div>
+
+                  <h3
+                    style={{
+                      borderBottom: "1px solid #000",
+                      paddingBottom: 4,
+                      marginTop: 32,
+                      marginBottom: 16,
+                    }}
+                  >
+                    Data Sources
+                  </h3>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>Mouse Genome Informatics (MGI).</strong> The Jackson
+                    Laboratory. Available at: http://www.informatics.jax.org
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      paddingLeft: 20,
+                      textIndent: -20,
+                    }}
+                  >
+                    <strong>Mouse Phenome Database (MPD).</strong> The Jackson
+                    Laboratory. Available at: https://phenome.jax.org
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+        )}
 
         <aside className="sp-right">
           <div className="panel">
@@ -667,7 +2099,66 @@ export default function SinglePage() {
             </div>
           </div>
 
-          {predictResult ? (
+          {mode === "SIM" && breedResult ? (
+            <div className="panel" style={{ marginTop: 16 }}>
+              <h3 style={{ marginBottom: 4 }}>Breeding Results</h3>
+              <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}>
+                Actual genetic outcomes from the breeding event
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#374151",
+                  marginBottom: 12,
+                  padding: "8px 10px",
+                  background: "#f9fafb",
+                  borderRadius: 6,
+                }}
+              >
+                <strong>{breedResult.cross_diagram}</strong> →{" "}
+                {breedResult.offspring_count} offspring
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#374151",
+                    marginBottom: 4,
+                  }}
+                >
+                  Coat Color Distribution
+                </div>
+                <div style={{ fontSize: 9, color: "#9ca3af", marginBottom: 6 }}>
+                  Observed phenotypes in offspring
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#6b7280",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {Object.entries(breedResult.genotype_counts || {}).map(
+                    ([k, v]) => (
+                      <div
+                        key={k}
+                        style={{
+                          padding: "6px 0",
+                          borderBottom: "1px solid #f3f4f6",
+                        }}
+                      >
+                        <span style={{ fontWeight: 500 }}>{k}:</span> {v} (
+                        {Math.round((v / breedResult.offspring_count) * 100)}%)
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {mode === "REAL" && predictResult ? (
             <div className="panel" style={{ marginTop: 16 }}>
               <h3 style={{ marginBottom: 4 }}>Cross Prediction Results</h3>
               <div style={{ fontSize: 10, color: "#6b7280", marginBottom: 12 }}>

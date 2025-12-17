@@ -16,7 +16,7 @@ from .schemas import (
     PopulationCreateRequest, PopulationResponse, SelectionRequest, SelectionResponse,
     GRMRequest, GRMResponse, InbreedingRequest, InbreedingResponse,
     HeritabilityRequest, HeritabilityResponse,
-    ValidationAllResponse, ValidationMethodResponse,
+    ValidationRequest, ValidationAllResponse, ValidationMethodResponse,
     StrainListResponse, GeneListResponse, RealCrossRequest, RealCrossResponse,
     MouseSchema, WebSocketMessage, WebSocketResponse
 )
@@ -437,7 +437,7 @@ async def estimate_heritability(request: HeritabilityRequest):
 # ============================================================================
 
 @app.post("/api/validate/all", response_model=ValidationAllResponse, tags=["Validation"])
-async def run_all_validation(db: Session = Depends(get_db)):
+async def run_all_validation(request: ValidationRequest, db: Session = Depends(get_db)):
     """
     Run all 5 validation methods and return comprehensive report.
 
@@ -447,8 +447,16 @@ async def run_all_validation(db: Session = Depends(get_db)):
     3. Inbreeding coefficient correlation
     4. Realized heritability estimation
     5. Real mode prediction accuracy
+
+    Parameters:
+    - n_trials: Number of trials for Mendelian test (default 1000)
+    - population_size: Population size for tests (default 100)
+    - n_generations: Number of generations for inbreeding test (default 5)
     """
     try:
+        # Log received parameters for debugging
+        print(f"Validation parameters received: n_trials={request.n_trials}, population_size={request.population_size}, n_generations={request.n_generations}")
+
         # Import validation functions
         from .services.genetics_service import (
             validate_mendelian_ratios,
@@ -463,7 +471,7 @@ async def run_all_validation(db: Session = Depends(get_db)):
 
         # Method 1: Mendelian ratios
         try:
-            result1 = validate_mendelian_ratios()
+            result1 = validate_mendelian_ratios(n_trials=request.n_trials)
             results["mendelian_ratios"] = result1
             detailed_results.append(ValidationMethodResponse(
                 method_name="Mendelian Ratios (Chi-Square)",
@@ -482,7 +490,7 @@ async def run_all_validation(db: Session = Depends(get_db)):
 
         # Method 2: GRM relationships
         try:
-            result2 = validate_grm_relationships()
+            result2 = validate_grm_relationships(population_size=request.population_size)
             results["grm_relationships"] = result2
             detailed_results.append(ValidationMethodResponse(
                 method_name="GRM Relationships",
@@ -501,7 +509,10 @@ async def run_all_validation(db: Session = Depends(get_db)):
 
         # Method 3: Inbreeding correlation
         try:
-            result3 = validate_inbreeding_correlation()
+            result3 = validate_inbreeding_correlation(
+                population_size=request.population_size,
+                n_generations=request.n_generations
+            )
             results["inbreeding_correlation"] = result3
             detailed_results.append(ValidationMethodResponse(
                 method_name="Inbreeding Correlation",
@@ -520,7 +531,7 @@ async def run_all_validation(db: Session = Depends(get_db)):
 
         # Method 4: Heritability
         try:
-            result4 = validate_heritability()
+            result4 = validate_heritability(population_size=request.population_size)
             results["heritability"] = result4
             detailed_results.append(ValidationMethodResponse(
                 method_name="Realized Heritability",
