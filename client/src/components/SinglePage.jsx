@@ -12,6 +12,7 @@ export default function SinglePage() {
   const [activeTab, setActiveTab] = useState("simulation");
   const [mode, setMode] = useState("SIM");
   const [docSection, setDocSection] = useState("overview");
+  const [docSearchQuery, setDocSearchQuery] = useState("");
 
   // SIM state
   const [popName, setPopName] = useState("Experiment 1");
@@ -330,6 +331,12 @@ export default function SinglePage() {
 
     setValidationLoading(false);
   }
+
+  // Helper function to check if content matches search query
+  const matchesSearch = (text) => {
+    if (!docSearchQuery.trim()) return true;
+    return text.toLowerCase().includes(docSearchQuery.toLowerCase());
+  };
 
   return (
     <div className="sp-root">
@@ -885,6 +892,51 @@ export default function SinglePage() {
               >
                 Documentation
               </h3>
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    placeholder="Search documentation..."
+                    value={docSearchQuery}
+                    onChange={(e) => setDocSearchQuery(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px",
+                      paddingRight: docSearchQuery ? "30px" : "10px",
+                      border: "1px solid #000",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      fontFamily: "inherit",
+                    }}
+                  />
+                  {docSearchQuery && (
+                    <button
+                      onClick={() => setDocSearchQuery("")}
+                      style={{
+                        position: "absolute",
+                        right: 5,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: 16,
+                        padding: "0 5px",
+                      }}
+                      title="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                {docSearchQuery && (
+                  <div style={{ fontSize: 10, color: "#666", marginTop: 4 }}>
+                    Searching for: "{docSearchQuery}"
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button
                   onClick={() => setDocSection("overview")}
@@ -1228,75 +1280,198 @@ export default function SinglePage() {
               }}
             >
               {docSection === "overview" && (
-                <div style={{ padding: 20, lineHeight: 1.6 }}>
+                <div style={{ padding: 20, lineHeight: 1.6, fontSize: 13 }}>
                   <h2
                     style={{
                       borderBottom: "2px solid #000",
                       paddingBottom: 8,
                       marginBottom: 16,
+                      fontSize: 20,
                     }}
                   >
                     Mouse Breeding Simulator - Overview
                   </h2>
-                  <p style={{ marginBottom: 12 }}>
+                  <p style={{ marginBottom: 16 }}>
                     A comprehensive genetics simulation system implementing
                     Mendelian inheritance, quantitative genetics, and genomic
-                    prediction methods used in modern animal breeding.
+                    prediction methods used in modern animal breeding programs.
+                    This simulator combines classical genetics with modern
+                    genomic techniques to provide an educational and research
+                    tool for understanding genetic inheritance patterns.
                   </p>
+
                   <h3
                     style={{
                       borderBottom: "1px solid #000",
                       paddingBottom: 4,
-                      marginTop: 20,
+                      marginTop: 24,
                       marginBottom: 12,
+                      fontSize: 16,
                     }}
                   >
                     Core Features
                   </h3>
-                  <ul style={{ marginLeft: 20, marginBottom: 16 }}>
-                    <li>Genome-wide SNPs (200 biallelic markers)</li>
+                  <ul
+                    style={{
+                      marginLeft: 20,
+                      marginBottom: 16,
+                      lineHeight: 1.8,
+                    }}
+                  >
                     <li>
-                      Recombination via Poisson crossovers on 2 chromosomes
+                      <strong>Genome-wide SNPs:</strong> 200 biallelic markers
+                      distributed across 2 chromosomes
                     </li>
-                    <li>Wright's pedigree inbreeding coefficient (F)</li>
-                    <li>VanRaden genomic relationship matrix (GRM)</li>
-                    <li>Quantitative trait via linear mixed model (LMM)</li>
-                    <li>Per-locus mutation model</li>
                     <li>
-                      Real mouse strain data integration (Mouse Phenome
-                      Database)
+                      <strong>Recombination:</strong> Poisson-distributed
+                      crossovers simulating meiotic recombination
+                    </li>
+                    <li>
+                      <strong>Pedigree Inbreeding:</strong> Wright's coefficient
+                      (F) tracking identity by descent
+                    </li>
+                    <li>
+                      <strong>Genomic Relationships:</strong> VanRaden GRM for
+                      genomic prediction
+                    </li>
+                    <li>
+                      <strong>Quantitative Traits:</strong> Linear mixed model
+                      with additive genetic effects
+                    </li>
+                    <li>
+                      <strong>Mutation Model:</strong> Per-locus mutation rates
+                      (0.001 for SNPs, 0.01 for visible traits)
+                    </li>
+                    <li>
+                      <strong>Real Data Integration:</strong> Mouse Phenome
+                      Database strain genotypes
                     </li>
                   </ul>
+
                   <h3
                     style={{
                       borderBottom: "1px solid #000",
                       paddingBottom: 4,
-                      marginTop: 20,
+                      marginTop: 24,
                       marginBottom: 12,
+                      fontSize: 16,
                     }}
                   >
                     Simulation Modes
                   </h3>
-                  <div style={{ marginBottom: 12 }}>
-                    <strong>SIM Mode (Simulated Genetics):</strong> Uses
-                    simulated genomes with random SNP markers and Mendelian
-                    inheritance patterns.
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      padding: 12,
+                      background: "#f9fafb",
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      SIM Mode (Simulated Genetics)
+                    </div>
+                    <p style={{ marginBottom: 8 }}>
+                      Uses simulated genomes with random SNP markers and
+                      Mendelian inheritance patterns. Ideal for learning
+                      genetics principles and testing breeding strategies.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 8,
+                        border: "1px solid #d1d5db",
+                      }}
+                    >
+                      pop = Population(size=30, mode=Mode.SIM)
+                      <br />
+                      offspring = mate(parent1, parent2)
+                    </div>
                   </div>
+
+                  <div
+                    style={{
+                      marginBottom: 16,
+                      padding: 12,
+                      background: "#f9fafb",
+                      border: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      REAL Mode (Real Genomic Data)
+                    </div>
+                    <p style={{ marginBottom: 8 }}>
+                      Uses actual mouse strain genotypes from the Mouse Phenome
+                      Database (MPD). Enables prediction of real offspring
+                      phenotypes based on actual genetic data from laboratory
+                      mouse strains.
+                    </p>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 8,
+                        border: "1px solid #d1d5db",
+                      }}
+                    >
+                      dataset = Dataset.load("datasets/cleaned/...")
+                      <br />
+                      pop = Population(mode=Mode.REAL, dataset=dataset,
+                      <br />
+                      &nbsp;&nbsp;strainA="C57BL/6J", strainB="BALB/cJ")
+                    </div>
+                  </div>
+
+                  <h3
+                    style={{
+                      borderBottom: "1px solid #000",
+                      paddingBottom: 4,
+                      marginTop: 24,
+                      marginBottom: 12,
+                      fontSize: 16,
+                    }}
+                  >
+                    Key Genetic Concepts
+                  </h3>
+
                   <div style={{ marginBottom: 12 }}>
-                    <strong>REAL Mode (Real Genomic Data):</strong> Uses actual
-                    mouse strain genotypes from the Mouse Phenome Database for
-                    prediction.
+                    <strong>Mendelian Inheritance:</strong> Each offspring
+                    receives one allele from each parent at every locus,
+                    following Mendel's laws of segregation and independent
+                    assortment.
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Recombination:</strong> During meiosis, chromosomes
+                    undergo crossover events that shuffle genetic material,
+                    creating new allele combinations.
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Inbreeding:</strong> Mating of related individuals
+                    increases homozygosity and can reveal recessive traits.
+                    Measured by Wright's coefficient F.
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Genomic Selection:</strong> Using genome-wide
+                    markers to predict breeding values and select superior
+                    individuals for breeding programs.
                   </div>
                 </div>
               )}
 
               {docSection === "classes" && (
-                <div style={{ padding: 20, lineHeight: 1.6 }}>
+                <div style={{ padding: 20, lineHeight: 1.6, fontSize: 13 }}>
                   <h2
                     style={{
                       borderBottom: "2px solid #000",
                       paddingBottom: 8,
                       marginBottom: 16,
+                      fontSize: 20,
                     }}
                   >
                     Code Structure
@@ -1309,29 +1484,101 @@ export default function SinglePage() {
                       padding: 12,
                     }}
                   >
-                    <h3 style={{ marginBottom: 8 }}>Class: Genome</h3>
-                    <p style={{ fontSize: 13, marginBottom: 8 }}>
-                      Stores genetic information including visible traits and
-                      genome-wide SNPs.
+                    <h3 style={{ marginBottom: 8, fontSize: 16 }}>
+                      Class: Genome
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Stores genetic information including visible traits (coat
+                      color, size, ear shape, temperament) and genome-wide SNPs
+                      distributed across 2 chromosomes with recombination.
                     </p>
+
                     <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Constructor:
+                    </div>
+                    <pre
                       style={{
                         fontFamily: "monospace",
-                        fontSize: 12,
-                        background: "#f9f9f9",
-                        padding: 8,
-                        border: "1px solid #ddd",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
                       }}
                     >
-                      <div>
-                        - snps: List[int] (200 SNP genotypes, 0/1/2 encoding)
-                      </div>
-                      <div>
-                        - visible_traits: Dict (coat_color, size, temperament)
-                      </div>
-                      <div>- get_snp_genotypes() → List[int]</div>
-                      <div>- get_allele_frequencies() → List[float]</div>
+                      {`def __init__(self,
+             coat_color=None, size=None,
+             ear_shape=None, temperament=None,
+             haplotype_chr1=None,
+             haplotype_chr2=None,
+             is_founder=False):`}
+                    </pre>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Key Attributes:
                     </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
+                        <code>coat_color</code>: Tuple[str, str] - Alleles for
+                        coat color (B/b)
+                      </li>
+                      <li>
+                        <code>size</code>: Tuple[str, str] - Alleles for body
+                        size (L/s)
+                      </li>
+                      <li>
+                        <code>ear_shape</code>: Tuple[str, str] - Alleles for
+                        ear shape (N/D)
+                      </li>
+                      <li>
+                        <code>temperament</code>: Tuple[str, str] - Alleles for
+                        temperament (F/A)
+                      </li>
+                      <li>
+                        <code>haplotype_chr1</code>: Tuple of 2 lists, each with
+                        100 SNPs
+                      </li>
+                      <li>
+                        <code>haplotype_chr2</code>: Tuple of 2 lists, each with
+                        100 SNPs
+                      </li>
+                    </ul>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Key Methods:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`def get_snp_genotypes(self) -> List[int]:
+    """Returns 200 SNP genotypes in 0/1/2 encoding"""
+
+def form_gamete(self) -> 'Genome':
+    """Creates gamete via meiosis with recombination"""
+
+def copy(self) -> 'Genome':
+    """Deep copy of genome"""`}
+                    </pre>
                   </div>
 
                   <div
@@ -1341,28 +1588,106 @@ export default function SinglePage() {
                       padding: 12,
                     }}
                   >
-                    <h3 style={{ marginBottom: 8 }}>Class: Mouse</h3>
-                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                    <h3 style={{ marginBottom: 8, fontSize: 16 }}>
+                      Class: Mouse
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
                       Represents an individual mouse with genome, phenotype,
-                      lineage, and quantitative trait.
+                      lineage tracking, and quantitative trait value. Supports
+                      both SIM and REAL modes.
                     </p>
+
                     <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Constructor:
+                    </div>
+                    <pre
                       style={{
                         fontFamily: "monospace",
-                        fontSize: 12,
-                        background: "#f9f9f9",
-                        padding: 8,
-                        border: "1px solid #ddd",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
                       }}
                     >
-                      <div>- id: int (unique identifier)</div>
-                      <div>- genome: Genome (genetic information)</div>
-                      <div>- phenotype: Dict (observable traits)</div>
-                      <div>- parents: Tuple[int, int] (dam_id, sire_id)</div>
-                      <div>- generation: int (generation number)</div>
-                      <div>- polytrait: float (quantitative trait value)</div>
-                      <div>- mate(partner, n_offspring) → List[Mouse]</div>
+                      {`def __init__(self,
+             genome: Genome = None,
+             generation: int = 0,
+             parents: Tuple[int, int] = None,
+             age: int = 0,
+             is_founder: bool = False,
+             polytrait: float = None,
+             strain: Optional[str] = None,
+             dataset: Optional[Dataset] = None,
+             mode: Mode = Mode.SIM):`}
+                    </pre>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Key Attributes:
                     </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
+                        <code>id</code>: int - Unique identifier
+                        (auto-incremented)
+                      </li>
+                      <li>
+                        <code>genome</code>: Genome - Genetic information
+                      </li>
+                      <li>
+                        <code>phenotype</code>: Dict - Observable traits (color,
+                        size, etc.)
+                      </li>
+                      <li>
+                        <code>parents</code>: Tuple[int, int] - Parent IDs (dam,
+                        sire)
+                      </li>
+                      <li>
+                        <code>generation</code>: int - Generation number
+                      </li>
+                      <li>
+                        <code>polytrait</code>: float - Quantitative trait value
+                      </li>
+                      <li>
+                        <code>strain</code>: Optional[str] - Strain name (REAL
+                        mode)
+                      </li>
+                    </ul>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Example Usage:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`# Create founder mouse (SIM mode)
+mouse = Mouse(generation=0, is_founder=True)
+
+# Create from real strain (REAL mode)
+dataset = Dataset.load("datasets/cleaned/...")
+mouse = Mouse(generation=0, is_founder=True,
+              strain="C57BL/6J", dataset=dataset,
+              mode=Mode.REAL)`}
+                    </pre>
                   </div>
 
                   <div
@@ -1372,30 +1697,102 @@ export default function SinglePage() {
                       padding: 12,
                     }}
                   >
-                    <h3 style={{ marginBottom: 8 }}>Class: Population</h3>
-                    <p style={{ fontSize: 13, marginBottom: 8 }}>
-                      Manages a population of mice with breeding, selection, and
+                    <h3 style={{ marginBottom: 8, fontSize: 16 }}>
+                      Class: Population
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Manages a population of mice with breeding, selection
+                      strategies, genomic calculations (GRM, inbreeding), and
                       statistics tracking.
                     </p>
+
                     <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Constructor:
+                    </div>
+                    <pre
                       style={{
                         fontFamily: "monospace",
-                        fontSize: 12,
-                        background: "#f9f9f9",
-                        padding: 8,
-                        border: "1px solid #ddd",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
                       }}
                     >
-                      <div>- mice: List[Mouse] (all individuals)</div>
-                      <div>- mouse_registry: Dict[int, Mouse] (ID lookup)</div>
-                      <div>- goal: Dict (breeding objectives)</div>
-                      <div>- compute_grm() → List[List[float]]</div>
-                      <div>
-                        - compute_genomic_inbreeding() → Dict[int, float]
-                      </div>
-                      <div>- next_generation(strategy, cull_rate)</div>
-                      <div>- get_statistics() → Dict</div>
+                      {`def __init__(self,
+             size: int = 30,
+             goal: Dict[str, str] = None,
+             mode: Mode = Mode.SIM,
+             dataset: Optional[Dataset] = None,
+             strainA: Optional[str] = None,
+             strainB: Optional[str] = None):`}
+                    </pre>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Key Methods:
                     </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
+                      }}
+                    >
+                      {`def compute_grm(self) -> List[List[float]]:
+    """Compute VanRaden genomic relationship matrix"""
+
+def next_generation(self, strategy='fitness',
+                    cull_rate=0.0) -> Dict:
+    """Advance to next generation with selection"""
+
+def get_stats(self) -> Dict:
+    """Get population statistics and metrics"""
+
+def select_fitness_pairs(self) -> List[Tuple]:
+    """Select breeding pairs by fitness"""
+
+def select_diverse_pairs(self) -> List[Tuple]:
+    """Select genetically diverse pairs"""`}
+                    </pre>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Example Usage:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`# Create population
+pop = Population(size=30, mode=Mode.SIM)
+
+# Advance generation with fitness selection
+stats = pop.next_generation(strategy='fitness',
+                             cull_rate=0.2)
+
+# Compute genomic relationship matrix
+grm = pop.compute_grm()
+
+# Get statistics
+stats = pop.get_stats()
+print(f"Mean inbreeding: {stats['mean_F_pedigree']}")`}
+                    </pre>
                   </div>
 
                   <div
@@ -1405,36 +1802,193 @@ export default function SinglePage() {
                       padding: 12,
                     }}
                   >
-                    <h3 style={{ marginBottom: 8 }}>Class: Dataset</h3>
-                    <p style={{ fontSize: 13, marginBottom: 8 }}>
+                    <h3 style={{ marginBottom: 8, fontSize: 16 }}>
+                      Class: Dataset
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
                       Lightweight loader for real mouse strain data from Mouse
-                      Phenome Database.
+                      Phenome Database (MPD). Handles genotype data and
+                      phenotype predictions.
                     </p>
+
                     <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Key Attributes:
+                    </div>
+                    <ul
                       style={{
-                        fontFamily: "monospace",
-                        fontSize: 12,
-                        background: "#f9f9f9",
-                        padding: 8,
-                        border: "1px solid #ddd",
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
                       }}
                     >
-                      <div>- strains: Dict[str, Dict] (strain genotypes)</div>
-                      <div>- loci: Dict[str, RealLocus] (gene definitions)</div>
-                      <div>- get_genotype(strain, locus) → int</div>
-                      <div>- predict_cross(strain1, strain2, locus) → Dict</div>
+                      <li>
+                        <code>strains</code>: Dict[str, Dict] - Strain genotypes
+                        and phenotypes
+                      </li>
+                      <li>
+                        <code>loci</code>: Dict[str, RealLocus] - Gene
+                        definitions with alleles
+                      </li>
+                      <li>
+                        <code>geno</code>: Dict - SNP marker genotypes for
+                        genomic analysis
+                      </li>
+                    </ul>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Key Methods:
                     </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
+                      }}
+                    >
+                      {`@staticmethod
+def load(filepath: str) -> 'Dataset':
+    """Load dataset from JSON file"""
+
+def get_genotype(self, strain: str, locus: str) -> int:
+    """Get genotype (0/1/2) for strain at locus"""
+
+def predict_cross(self, strain1: str, strain2: str,
+                  locus: str) -> Dict:
+    """Predict offspring probabilities"""`}
+                    </pre>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Example Usage:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`# Load real strain data
+dataset = Dataset.load("datasets/cleaned/...")
+
+# Get genotype for C57BL/6J at Tyrp1 locus
+geno = dataset.get_genotype("C57BL/6J", "Tyrp1")
+
+# Predict cross outcome
+pred = dataset.predict_cross("C57BL/6J", "BALB/cJ",
+                              "Tyrp1")`}
+                    </pre>
+                  </div>
+
+                  <div
+                    style={{
+                      marginBottom: 24,
+                      border: "1px solid #000",
+                      padding: 12,
+                    }}
+                  >
+                    <h3 style={{ marginBottom: 8, fontSize: 16 }}>
+                      Function: mate()
+                    </h3>
+                    <p style={{ fontSize: 13, marginBottom: 12 }}>
+                      Core breeding function implementing Mendelian inheritance
+                      with recombination and mutation. Creates offspring from
+                      two parent mice.
+                    </p>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Function Signature:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
+                      }}
+                    >
+                      {`def mate(parent1: Mouse, parent2: Mouse,
+         n_offspring: int = None) -> List[Mouse]:`}
+                    </pre>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Implementation Steps:
+                    </div>
+                    <ol
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
+                        Each parent forms gametes via meiosis (recombination)
+                      </li>
+                      <li>Gametes combine to form offspring genomes</li>
+                      <li>
+                        Mutations applied at per-locus rates (0.001 SNPs, 0.01
+                        traits)
+                      </li>
+                      <li>Phenotypes determined from genotypes</li>
+                      <li>Quantitative traits computed from SNP effects</li>
+                    </ol>
+
+                    <div
+                      style={{ fontWeight: 600, marginBottom: 6, fontSize: 12 }}
+                    >
+                      Example Usage:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`# Breed two mice
+parent1 = pop.mice[0]
+parent2 = pop.mice[1]
+offspring = mate(parent1, parent2, n_offspring=5)
+
+# Offspring inherit from both parents
+for child in offspring:
+    print(f"Mouse {child.id}: {child.phenotype}")
+    print(f"Parents: {child.parents}")`}
+                    </pre>
                   </div>
                 </div>
               )}
 
               {docSection === "mathematics" && (
-                <div style={{ padding: 20, lineHeight: 1.8 }}>
+                <div style={{ padding: 20, lineHeight: 1.8, fontSize: 13 }}>
                   <h2
                     style={{
                       borderBottom: "2px solid #000",
                       paddingBottom: 8,
                       marginBottom: 16,
+                      fontSize: 20,
                     }}
                   >
                     Mathematical Equations
@@ -1447,18 +2001,23 @@ export default function SinglePage() {
                       padding: 16,
                     }}
                   >
-                    <h3 style={{ marginBottom: 12 }}>
+                    <h3 style={{ marginBottom: 12, fontSize: 16 }}>
                       1. Genomic Relationship Matrix (GRM)
                     </h3>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
                       VanRaden (2008) method for computing genomic relationships
-                      from SNP marker data.
+                      from SNP marker data. This is the foundation of genomic
+                      prediction in animal breeding and quantitative genetics.
                     </p>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Formula:
+                    </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
                         marginBottom: 12,
@@ -1467,30 +2026,98 @@ export default function SinglePage() {
                       G = (1 / Σ 2p<sub>j</sub>(1-p<sub>j</sub>)) × (M - 2P)(M -
                       2P)<sup>T</sup>
                     </div>
-                    <div style={{ fontSize: 13 }}>
-                      <div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Where:
+                    </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
                         <strong>M</strong>: n×m matrix of SNP genotypes (0/1/2
                         encoding)
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>P</strong>: n×m matrix where each element is 2p
                         <sub>j</sub>
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>
                           p<sub>j</sub>
                         </strong>
                         : allele frequency at SNP j
-                      </div>
-                      <div>
+                      </li>
+                      <li>
+                        <strong>M - 2P</strong>: centered genotype matrix
+                        (critical step!)
+                      </li>
+                      <li>
                         <strong>G[i][j]</strong>: genomic relationship between
                         individuals i and j
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>G[i][i]</strong>: 1 + F<sub>i</sub> (diagonal
                         relates to inbreeding)
-                      </div>
+                      </li>
+                    </ul>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Implementation:
                     </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                        marginBottom: 12,
+                      }}
+                    >
+                      {`# Step 1: Get genotype matrix M (n × m)
+M = [mouse.genome.get_snp_genotypes() for mouse in mice]
+
+# Step 2: Compute allele frequencies
+p = [sum(M[i][j] for i in range(n)) / (2*n)
+     for j in range(m)]
+
+# Step 3: Center the matrix (CRITICAL!)
+M_centered = [[M[i][j] - 2*p[j]
+               for j in range(m)]
+              for i in range(n)]
+
+# Step 4: Compute normalization
+denom = sum(2*p_j*(1-p_j) for p_j in p)
+
+# Step 5: Compute G = M_centered @ M_centered.T / denom
+G = [[sum(M_centered[i][k] * M_centered[j][k]
+          for k in range(m)) / denom
+      for j in range(n)]
+     for i in range(n)]`}
+                    </pre>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Expected Values:
+                    </div>
+                    <ul style={{ marginLeft: 20, lineHeight: 1.8 }}>
+                      <li>
+                        Unrelated founders: G<sub>ik</sub> ≈ 0.0
+                      </li>
+                      <li>
+                        Parent-offspring: G<sub>ik</sub> ≈ 0.5
+                      </li>
+                      <li>
+                        Full siblings: G<sub>ik</sub> ≈ 0.5
+                      </li>
+                      <li>
+                        Self (diagonal): G<sub>ii</sub> ≈ 1.0 + F<sub>i</sub>
+                      </li>
+                    </ul>
                   </div>
 
                   <div
@@ -1500,18 +2127,23 @@ export default function SinglePage() {
                       padding: 16,
                     }}
                   >
-                    <h3 style={{ marginBottom: 12 }}>
+                    <h3 style={{ marginBottom: 12, fontSize: 16 }}>
                       2. Pedigree Inbreeding Coefficient
                     </h3>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
-                      Wright's coefficient measuring probability of identity by
-                      descent.
+                      Wright's coefficient (F) measuring probability of identity
+                      by descent. Computed recursively from pedigree
+                      relationships.
                     </p>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Formula:
+                    </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
                         marginBottom: 12,
@@ -1519,22 +2151,82 @@ export default function SinglePage() {
                     >
                       F<sub>X</sub> = φ(dam, sire)
                     </div>
-                    <div style={{ fontSize: 13 }}>
-                      <div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Kinship Coefficient:
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 14,
+                        background: "#fff",
+                        padding: 12,
+                        border: "1px solid #000",
+                        marginBottom: 12,
+                      }}
+                    >
+                      φ(i,j) = 0.5 × [φ(dam<sub>i</sub>, j) + φ(sire<sub>i</sub>
+                      , j)] × (1 + F<sub>j</sub>)
+                    </div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Where:
+                    </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
                         <strong>
                           F<sub>X</sub>
                         </strong>
                         : inbreeding coefficient of individual X
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>φ(dam, sire)</strong>: kinship coefficient
                         between parents
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>φ(i,j)</strong>: probability that alleles are
                         identical by descent
-                      </div>
+                      </li>
+                      <li>Founders: F = 0, φ(i,i) = 0.5</li>
+                    </ul>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Implementation:
                     </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`def pedigree_inbreeding(mouse, registry):
+    """Compute Wright's F coefficient"""
+    if not mouse.parents:
+        return 0.0  # Founder
+
+    dam_id, sire_id = mouse.parents
+    dam = registry[dam_id]
+    sire = registry[sire_id]
+
+    # F = kinship between parents
+    return kinship(dam, sire, registry)
+
+def kinship(mouse1, mouse2, registry):
+    """Compute kinship coefficient φ(i,j)"""
+    # Recursive computation using pedigree
+    # Base case: φ(founder, founder) = 0
+    # Recursive: φ(i,j) = 0.5[φ(dam_i,j) + φ(sire_i,j)]`}
+                    </pre>
                   </div>
 
                   <div
@@ -1544,15 +2236,22 @@ export default function SinglePage() {
                       padding: 16,
                     }}
                   >
-                    <h3 style={{ marginBottom: 12 }}>3. Genomic Inbreeding</h3>
+                    <h3 style={{ marginBottom: 12, fontSize: 16 }}>
+                      3. Genomic Inbreeding
+                    </h3>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
                       Inbreeding coefficient derived from GRM diagonal elements.
+                      Measures realized inbreeding from actual genomic data.
                     </p>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Formula:
+                    </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
                         marginBottom: 12,
@@ -1560,20 +2259,62 @@ export default function SinglePage() {
                     >
                       F<sub>genomic</sub> = G<sub>ii</sub> - 1
                     </div>
-                    <div style={{ fontSize: 13 }}>
-                      <div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Where:
+                    </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
                         <strong>
                           G<sub>ii</sub>
                         </strong>
                         : diagonal element of GRM for individual i
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>
                           F<sub>genomic</sub>
                         </strong>
                         : genomic inbreeding coefficient
-                      </div>
+                      </li>
+                      <li>Measures actual homozygosity from SNP data</li>
+                      <li>
+                        Can differ from pedigree F due to Mendelian sampling
+                      </li>
+                    </ul>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Implementation:
                     </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`# Compute GRM
+G = pop.compute_grm()
+
+# Extract genomic inbreeding for each individual
+F_genomic = []
+for i in range(len(pop.mice)):
+    F_gen = G[i][i] - 1.0
+    F_genomic.append(F_gen)
+
+# Compare with pedigree inbreeding
+F_pedigree = [pedigree_inbreeding(m, pop.mouse_registry)
+              for m in pop.mice]
+correlation = pearson_correlation(F_pedigree, F_genomic)`}
+                    </pre>
                   </div>
 
                   <div
@@ -1583,18 +2324,23 @@ export default function SinglePage() {
                       padding: 16,
                     }}
                   >
-                    <h3 style={{ marginBottom: 12 }}>
+                    <h3 style={{ marginBottom: 12, fontSize: 16 }}>
                       4. Linear Mixed Model (LMM)
                     </h3>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
                       Quantitative trait model with fixed and random genetic
-                      effects.
+                      effects. Foundation of genomic prediction and breeding
+                      value estimation.
                     </p>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Model:
+                    </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
                         marginBottom: 12,
@@ -1602,39 +2348,54 @@ export default function SinglePage() {
                     >
                       y = Xb + Za + e
                     </div>
-                    <div style={{ fontSize: 13, marginBottom: 12 }}>
-                      <div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Where:
+                    </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
                         <strong>y</strong>: n×1 vector of phenotypic
                         observations
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>X</strong>: n×p design matrix for fixed effects
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>b</strong>: p×1 vector of fixed effect
                         coefficients
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>Z</strong>: n×q incidence matrix
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>a</strong>: q×1 vector of random genetic
                         effects, a ~ N(0, Gσ<sup>2</sup>
                         <sub>a</sub>)
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>e</strong>: n×1 vector of residual errors, e ~
                         N(0, Iσ<sup>2</sup>
                         <sub>e</sub>)
-                      </div>
+                      </li>
+                    </ul>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Heritability:
                     </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
+                        marginBottom: 12,
                       }}
                     >
                       h<sup>2</sup> = σ<sup>2</sup>
@@ -1642,6 +2403,36 @@ export default function SinglePage() {
                       <sub>a</sub> + σ<sup>2</sup>
                       <sub>e</sub>)
                     </div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Implementation:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`def compute_polytrait(mouse, snp_effects):
+    """Compute quantitative trait from SNP effects"""
+    genotypes = mouse.genome.get_snp_genotypes()
+
+    # Additive genetic value
+    genetic_value = sum(g * beta
+                        for g, beta in zip(genotypes, snp_effects))
+
+    # Add environmental noise
+    h2 = 0.5  # Target heritability
+    var_g = var(genetic_values)
+    var_e = var_g * (1 - h2) / h2
+    noise = random.gauss(0, sqrt(var_e))
+
+    return genetic_value + noise`}
+                    </pre>
                   </div>
 
                   <div
@@ -1651,15 +2442,23 @@ export default function SinglePage() {
                       padding: 16,
                     }}
                   >
-                    <h3 style={{ marginBottom: 12 }}>5. Chi-Square Test</h3>
+                    <h3 style={{ marginBottom: 12, fontSize: 16 }}>
+                      5. Chi-Square Test
+                    </h3>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
                       Goodness-of-fit test for Mendelian ratios (Pearson 1900).
+                      Tests if observed genotype frequencies match expected
+                      Mendelian ratios.
                     </p>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Formula:
+                    </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
                         marginBottom: 12,
@@ -1668,23 +2467,72 @@ export default function SinglePage() {
                       χ<sup>2</sup> = Σ[(O<sub>i</sub> - E<sub>i</sub>)
                       <sup>2</sup> / E<sub>i</sub>]
                     </div>
-                    <div style={{ fontSize: 13 }}>
-                      <div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Where:
+                    </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
                         <strong>
                           O<sub>i</sub>
                         </strong>
                         : observed count for genotype i
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>
                           E<sub>i</sub>
                         </strong>
                         : expected count for genotype i
-                      </div>
-                      <div>
+                      </li>
+                      <li>
                         <strong>Critical value</strong>: 5.991 (α=0.05, df=2)
-                      </div>
+                      </li>
+                      <li>
+                        For Aa × Aa cross: Expected ratio 1:2:1 (AA:Aa:aa)
+                      </li>
+                    </ul>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Implementation:
                     </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`def chi_square_test(observed, expected):
+    """Test if observed matches expected ratios"""
+    chi2 = sum((obs - exp)**2 / exp
+               for obs, exp in zip(observed, expected))
+
+    # For 1:2:1 ratio (df=2), critical value = 5.991
+    critical_value = 5.991
+    p_value = 1 - chi2_cdf(chi2, df=2)
+
+    return chi2 < critical_value  # Pass if chi2 < 5.991
+
+# Example: Test Aa × Aa cross
+n_trials = 1000
+counts = {'AA': 0, 'Aa': 0, 'aa': 0}
+for _ in range(n_trials):
+    offspring = mate(parent1, parent2, n_offspring=1)[0]
+    # Count genotypes...
+
+observed = [counts['AA'], counts['Aa'], counts['aa']]
+expected = [n_trials*0.25, n_trials*0.5, n_trials*0.25]
+passes = chi_square_test(observed, expected)`}
+                    </pre>
                   </div>
 
                   <div
@@ -1694,18 +2542,23 @@ export default function SinglePage() {
                       padding: 16,
                     }}
                   >
-                    <h3 style={{ marginBottom: 12 }}>
+                    <h3 style={{ marginBottom: 12, fontSize: 16 }}>
                       6. Heritability Estimation
                     </h3>
                     <p style={{ fontSize: 13, marginBottom: 12 }}>
                       Parent-offspring regression method (Falconer & Mackay
-                      1996).
+                      1996). Breeder's equation relating selection response to
+                      heritability.
                     </p>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Breeder's Equation:
+                    </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
                         marginBottom: 12,
@@ -1713,31 +2566,97 @@ export default function SinglePage() {
                     >
                       R = h<sup>2</sup> × S
                     </div>
-                    <div style={{ fontSize: 13, marginBottom: 12 }}>
-                      <div>
-                        <strong>R</strong>: response to selection
-                      </div>
-                      <div>
-                        <strong>S</strong>: selection differential
-                      </div>
-                      <div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Where:
+                    </div>
+                    <ul
+                      style={{
+                        marginLeft: 20,
+                        marginBottom: 12,
+                        lineHeight: 1.8,
+                      }}
+                    >
+                      <li>
+                        <strong>R</strong>: response to selection (offspring
+                        mean - population mean)
+                      </li>
+                      <li>
+                        <strong>S</strong>: selection differential (parent mean
+                        - population mean)
+                      </li>
+                      <li>
                         <strong>
                           h<sup>2</sup>
                         </strong>
                         : narrow-sense heritability
-                      </div>
+                      </li>
+                      <li>
+                        <strong>
+                          Realized h<sup>2</sup>
+                        </strong>
+                        : h<sup>2</sup> = R / S
+                      </li>
+                    </ul>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Regression Method:
                     </div>
                     <div
                       style={{
                         fontFamily: "monospace",
                         fontSize: 14,
-                        background: "#f9f9f9",
+                        background: "#fff",
                         padding: 12,
                         border: "1px solid #000",
+                        marginBottom: 12,
                       }}
                     >
                       Slope(offspring ~ mid-parent) = h<sup>2</sup>
                     </div>
+
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                      Implementation:
+                    </div>
+                    <pre
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 11,
+                        background: "#fff",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        overflow: "auto",
+                      }}
+                    >
+                      {`# Create large population
+pop = Population(size=200)
+pop_mean = mean([m.polytrait for m in pop.mice])
+
+# Select top 20% as parents (strong selection)
+sorted_mice = sorted(pop.mice, key=lambda m: m.polytrait,
+                     reverse=True)
+parents = sorted_mice[:40]
+parent_mean = mean([m.polytrait for m in parents])
+
+# Selection differential
+S = parent_mean - pop_mean
+
+# Breed selected parents
+offspring = []
+for i in range(0, len(parents), 2):
+    offspring.extend(mate(parents[i], parents[i+1]))
+
+# Response to selection
+offspring_mean = mean([m.polytrait for m in offspring])
+R = offspring_mean - pop_mean
+
+# Realized heritability
+h2_realized = R / S
+h2_target = 0.5  # Target heritability
+
+# Validation: |h2_realized - h2_target| < 0.15
+passes = abs(h2_realized - h2_target) < 0.15`}
+                    </pre>
                   </div>
                 </div>
               )}
